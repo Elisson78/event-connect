@@ -2,23 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, PlusCircle, Star, TrendingUp, Tag, FileText } from 'lucide-react';
+import { CheckCircle, Tag, FileText } from 'lucide-react';
 
-const plans = {
-  Gratuito: { name: 'Gratuito', fee_percent: 0, fee_fixed: 0.50, features: ['Todas as funções essenciais', 'Com publicidade de terceiros'] },
-  Plus: { name: 'Plus', fee_percent: 0.039, fee_fixed: 0.49, features: ['Todas as funções do Gratuito', 'Suporte prioritário'] },
-  Pro: { name: 'Pro', fee_percent: 0.049, fee_fixed: 0.89, features: ['Todas as funções do Plus', 'Sem anúncios de terceiros'] },
+const getFeeFixed = (ticketPrice) => {
+  if (ticketPrice >= 0 && ticketPrice <= 50) return 0.50;
+  if (ticketPrice >= 51 && ticketPrice <= 100) return 0.60;
+  if (ticketPrice >= 101 && ticketPrice <= 500) return 0.65;
+  if (ticketPrice > 500) return 0.65;
+  return 0.50;
 };
 
 const RevenueCalculator = () => {
   const [ticketPrice, setTicketPrice] = useState('');
   const [numTickets, setNumTickets] = useState('');
-  const [noThirdPartyAds, setNoThirdPartyAds] = useState(false);
   const [results, setResults] = useState({
-    plan: plans.Gratuito,
+    feeFixed: 0.50,
     grossRevenue: 0,
     totalCommission: 0,
     netRevenue: 0,
@@ -27,25 +27,12 @@ const RevenueCalculator = () => {
   useEffect(() => {
     const price = parseFloat(ticketPrice) || 0;
     const quantity = parseInt(numTickets) || 0;
-
-    let selectedPlan = plans.Gratuito;
-    if (noThirdPartyAds) {
-      selectedPlan = plans.Pro;
-    } else if (price > 50) {
-      selectedPlan = plans.Plus;
-    }
-
+    const feeFixed = getFeeFixed(price);
     const grossRevenue = price * quantity;
-    const totalCommission = (price * selectedPlan.fee_percent + selectedPlan.fee_fixed) * quantity;
+    const totalCommission = feeFixed * quantity;
     const netRevenue = grossRevenue - totalCommission;
-
-    setResults({
-      plan: selectedPlan,
-      grossRevenue,
-      totalCommission,
-      netRevenue,
-    });
-  }, [ticketPrice, numTickets, noThirdPartyAds]);
+    setResults({ feeFixed, grossRevenue, totalCommission, netRevenue });
+  }, [ticketPrice, numTickets]);
 
   const formatCurrency = (value) => {
     return `CHF ${value.toLocaleString('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -57,7 +44,13 @@ const RevenueCalculator = () => {
         <CardHeader>
           <CardTitle className="text-3xl font-bold text-gray-800">Calcule sua receita</CardTitle>
           <CardDescription>
-            Digite o número de ingressos e o preço. O plano é selecionado automaticamente com base nas seguintes regras: se o preço do bilhete for superior a CHF 50, o pacote Plus é selecionado. Se você marcar 'sem anúncios de terceiros', o pacote Pro será aplicado.
+            Digite o número de ingressos e o preço. A taxa fixa por ingresso será aplicada conforme a tabela:
+            <ul className="mt-2 text-sm text-gray-700 list-disc list-inside">
+              <li>0 a 50 ingressos: <b>CHF 0.50</b> por ingresso</li>
+              <li>51 a 100 ingressos: <b>CHF 0.60</b> por ingresso</li>
+              <li>101 a 500 ingressos: <b>CHF 0.65</b> por ingresso</li>
+              <li>Acima de 500 ingressos: <b>CHF 0.65</b> por ingresso</li>
+            </ul>
           </CardDescription>
         </CardHeader>
         <CardContent className="p-8 pt-6 space-y-8">
@@ -92,18 +85,8 @@ const RevenueCalculator = () => {
               </div>
             </div>
           </div>
-          <div className="flex items-center space-x-3 p-4 bg-violet-50 border border-violet-200 rounded-lg">
-            <Checkbox
-              id="no-ads"
-              checked={noThirdPartyAds}
-              onCheckedChange={setNoThirdPartyAds}
-              className="h-5 w-5"
-            />
-            <Label htmlFor="no-ads" className="text-base font-medium text-violet-800 flex items-center">
-              Sem anúncios de terceiros
-              <Star className="h-4 w-4 ml-2 text-violet-500 fill-current" />
-              <span className="ml-1 font-bold">Pro</span>
-            </Label>
+          <div className="pt-4 text-base text-gray-700">
+            <b>Taxa fixa aplicada:</b> {formatCurrency(results.feeFixed)} por ingresso
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t">
             <div className="p-4 bg-green-50 rounded-lg">
@@ -125,39 +108,35 @@ const RevenueCalculator = () => {
       <div className="lg:col-span-2">
         <AnimatePresence mode="wait">
           <motion.div
-            key={results.plan.name}
+            key={results.feeFixed}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
             className="h-full"
           >
-            <Card className={`h-full shadow-2xl rounded-2xl border-0 ${
-              results.plan.name === 'Gratuito' ? 'bg-gray-100' :
-              results.plan.name === 'Plus' ? 'bg-yellow-50 border-yellow-300' :
-              'bg-violet-100 border-violet-300'
-            }`}>
+            <Card className="h-full shadow-2xl rounded-2xl border-0 bg-gray-100">
               <CardContent className="p-8 flex flex-col justify-between h-full">
                 <div>
                   <div className="flex items-center space-x-3 mb-4">
-                    {results.plan.name === 'Gratuito' && <TrendingUp className="h-8 w-8 text-gray-500" />}
-                    {results.plan.name === 'Plus' && <PlusCircle className="h-8 w-8 text-yellow-500" />}
-                    {results.plan.name === 'Pro' && <Star className="h-8 w-8 text-violet-500" />}
-                    <h3 className="text-2xl font-bold">Pacote {results.plan.name}</h3>
+                    <CheckCircle className="h-8 w-8 text-green-500" />
+                    <h3 className="text-2xl font-bold">Resumo do cálculo</h3>
                   </div>
-                  <p className="text-gray-600 mb-6">O plano ideal para suas necessidades atuais.</p>
                   <ul className="space-y-3">
-                    {results.plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-center space-x-3">
-                        <CheckCircle className="h-5 w-5 text-green-500" />
-                        <span className="text-gray-700">{feature}</span>
-                      </li>
-                    ))}
+                    <li className="flex items-center space-x-3">
+                      <span className="text-gray-700">Taxa fixa aplicada: <b>{formatCurrency(results.feeFixed)}</b> por ingresso</span>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                      <span className="text-gray-700">Receita bruta: <b>{formatCurrency(results.grossRevenue)}</b></span>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                      <span className="text-gray-700">Custos totais: <b>{formatCurrency(results.totalCommission)}</b></span>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                      <span className="text-gray-700">Receita líquida: <b>{formatCurrency(results.netRevenue)}</b></span>
+                    </li>
                   </ul>
                 </div>
-                <Button variant="default" size="lg" className="w-full mt-8">
-                  Comparar Pacotes
-                </Button>
               </CardContent>
             </Card>
           </motion.div>

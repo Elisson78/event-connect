@@ -7,7 +7,7 @@ import { Award, BarChart, CheckCircle, DollarSign, TrendingUp, Users, Zap } from
 
 const AboutOrganizersPage = () => {
   useEffect(() => {
-    document.title = 'Para Organizadores - EventiConnect';
+    document.title = 'Para Organizadores - Event Connect';
   }, []);
 
   const plans = [
@@ -77,10 +77,10 @@ const AboutOrganizersPage = () => {
       >
         <div className="container mx-auto px-6 text-center">
           <h1 className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight">
-            Potencialize Seus Eventos com <span className="text-orange-400">EventiConnect</span>
+            Potencialize Seus Eventos com <span className="text-orange-400">Event Connect</span>
           </h1>
           <p className="text-lg md:text-xl text-gray-300 mb-10 max-w-3xl mx-auto">
-            A plataforma completa para criar, gerenciar e promover eventos de sucesso. Junte-se a milhares de organizadores que confiam na EventiConnect.
+            A plataforma completa para criar, gerenciar e promover eventos de sucesso. Junte-se a milhares de organizadores que confiam na Event Connect.
           </p>
           <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white text-lg px-10 py-7 rounded-lg font-semibold shadow-xl transform hover:scale-105 transition-transform">
             <Link to="/register?role=organizer">Comece a Organizar Agora</Link>
@@ -91,7 +91,7 @@ const AboutOrganizersPage = () => {
       <section id="benefits" className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Por que escolher a EventiConnect?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Por que escolher a Event Connect?</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Oferecemos as ferramentas e o suporte que você precisa para transformar suas ideias em eventos memoráveis.
             </p>
@@ -124,7 +124,7 @@ const AboutOrganizersPage = () => {
             </div>
             <div className="bg-white p-8 md:p-12 rounded-xl shadow-xl space-y-6">
                 <p className="text-gray-700 text-lg leading-relaxed">
-                    A EventiConnect nasceu da paixão por eventos e da crença de que a tecnologia pode simplificar e enriquecer a forma como eles são organizados e vivenciados. Desde 2023, nossa missão tem sido fornecer uma plataforma robusta, intuitiva e acessível para organizadores de todos os tamanhos.
+                    A Event Connect nasceu da paixão por eventos e da crença de que a tecnologia pode simplificar e enriquecer a forma como eles são organizados e vivenciados. Desde 2023, nossa missão tem sido fornecer uma plataforma robusta, intuitiva e acessível para organizadores de todos os tamanhos.
                 </p>
                 <p className="text-gray-700 text-lg leading-relaxed">
                     Começamos como uma pequena equipe de entusiastas e, hoje, somos uma comunidade crescente que já ajudou a realizar milhares de eventos, desde pequenas reuniões locais até grandes conferências nacionais. Acreditamos no poder dos encontros para inspirar, educar e entreter.
@@ -133,7 +133,7 @@ const AboutOrganizersPage = () => {
                     Nossos valores são inovação contínua, foco no cliente e paixão por resultados. Estamos sempre buscando novas maneiras de melhorar nossa plataforma e oferecer o melhor suporte possível aos nossos usuários. Junte-se a nós e faça parte desta história de sucesso!
                 </p>
                 <div className="flex justify-center pt-6">
-                    <img src="https://source.unsplash.com/random/600x400?team,office,startup" alt="Equipe EventiConnect trabalhando" className="rounded-lg shadow-md w-full max-w-lg"/>
+                    <img src="https://source.unsplash.com/random/600x400?team,office,startup" alt="Equipe Event Connect trabalhando" className="rounded-lg shadow-md w-full max-w-lg"/>
                 </div>
             </div>
           </div>
@@ -193,7 +193,7 @@ const AboutOrganizersPage = () => {
 
       <footer className="py-12 bg-gray-800 text-gray-400 text-center">
         <div className="container mx-auto px-6">
-          <p>&copy; {new Date().getFullYear()} EventiConnect. Todos os direitos reservados.</p>
+          <p>&copy; {new Date().getFullYear()} Event Connect. Todos os direitos reservados.</p>
           <p className="text-sm">Feito com ❤️ para conectar pessoas.</p>
         </div>
       </footer>

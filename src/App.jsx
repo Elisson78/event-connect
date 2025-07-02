@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -70,37 +69,37 @@ const PageTitleUpdater = () => {
 
   useEffect(() => {
     const path = location.pathname;
-    let title = "EventiConnect";
-    if (path === "/") title = "EventiConnect - Sua Plataforma de Eventos";
-    else if (path === "/events") title = "Eventos - EventiConnect";
-    else if (path.startsWith("/event/")) title = "Detalhes do Evento - EventiConnect";
-    else if (path.startsWith("/payment/")) title = "Pagamento - EventiConnect";
-    else if (path === "/login") title = "Login - EventiConnect";
-    else if (path === "/register") title = "Cadastro - EventiConnect";
-    else if (path === "/para-organizadores") title = "Para Organizadores - EventiConnect";
-    else if (path === "/planos") title = "Planos e Preços - EventiConnect";
+    let title = "Event Connect";
+    if (path === "/") title = "Event Connect - Sua Plataforma de Eventos";
+    else if (path === "/events") title = "Eventos - Event Connect";
+    else if (path.startsWith("/event/")) title = "Detalhes do Evento - Event Connect";
+    else if (path.startsWith("/payment/")) title = "Pagamento - Event Connect";
+    else if (path === "/login") title = "Login - Event Connect";
+    else if (path === "/register") title = "Cadastro - Event Connect";
+    else if (path === "/para-organizadores") title = "Para Organizadores - Event Connect";
+    else if (path === "/planos") title = "Planos e Preços - Event Connect";
     else if (path.startsWith("/organizer/dashboard")) {
-      if (path.endsWith("/registrations")) title = "Inscritos - Dashboard do Organizador - EventiConnect";
-      else if (path.endsWith("/profile")) title = "Perfil da Empresa - Dashboard do Organizador - EventiConnect";
-      else if (path.endsWith("/events-management")) title = "Gerenciar Eventos - Dashboard do Organizador - EventiConnect";
-      else if (path.endsWith("/giveaways")) title = "Sorteios - Dashboard do Organizador - EventiConnect";
-      else if (path.endsWith("/marketplace")) title = "Mercado - Dashboard do Organizador - EventiConnect";
-      else if (path.endsWith("/collaborators")) title = "Colaboradores - Dashboard do Organizador - EventiConnect";
-      else if (path.endsWith("/finances")) title = "Financeiro - Dashboard do Organizador - EventiConnect";
-      else if (path.endsWith("/manual-payment")) title = "Pagamento Manual - Dashboard do Organizador - EventiConnect";
-      else title = "Dashboard do Organizador - EventiConnect";
+      if (path.endsWith("/registrations")) title = "Inscritos - Dashboard do Organizador - Event Connect";
+      else if (path.endsWith("/profile")) title = "Perfil da Empresa - Dashboard do Organizador - Event Connect";
+      else if (path.endsWith("/events-management")) title = "Gerenciar Eventos - Dashboard do Organizador - Event Connect";
+      else if (path.endsWith("/giveaways")) title = "Sorteios - Dashboard do Organizador - Event Connect";
+      else if (path.endsWith("/marketplace")) title = "Mercado - Dashboard do Organizador - Event Connect";
+      else if (path.endsWith("/collaborators")) title = "Colaboradores - Dashboard do Organizador - Event Connect";
+      else if (path.endsWith("/finances")) title = "Financeiro - Dashboard do Organizador - Event Connect";
+      else if (path.endsWith("/manual-payment")) title = "Pagamento Manual - Dashboard do Organizador - Event Connect";
+      else title = "Dashboard do Organizador - Event Connect";
     }
-    else if (path.startsWith("/organizador/")) title = "Perfil do Organizador - EventiConnect";
-    else if (path.startsWith("/participant/dashboard")) title = "Dashboard do Participante - EventiConnect";
+    else if (path.startsWith("/organizador/")) title = "Perfil do Organizador - Event Connect";
+    else if (path.startsWith("/participant/dashboard")) title = "Dashboard do Participante - Event Connect";
     else if (path.startsWith("/admin/dashboard")) {
-      if (path.includes("settings")) title = "Configurações - Dashboard do Admin - EventiConnect";
-      else if (path.includes("roles")) title = "Funções - Dashboard do Admin - EventiConnect";
-      else if (path.includes("marketplace")) title = "Mercado - Dashboard do Admin - EventiConnect";
-      else if (path.includes("organizers")) title = "Organizadores - Dashboard do Admin - EventiConnect";
-      else if (path.includes("pages")) title = "Páginas - Dashboard do Admin - EventiConnect";
-      else if (path.includes("plans")) title = "Planos e Comissões - Dashboard do Admin - EventiConnect";
-      else if (path.includes("manual_payments")) title = "Confirmações Manuais - Dashboard do Admin - EventiConnect";
-      else title = "Dashboard do Admin - EventiConnect";
+      if (path.includes("settings")) title = "Configurações - Dashboard do Admin - Event Connect";
+      else if (path.includes("roles")) title = "Funções - Dashboard do Admin - Event Connect";
+      else if (path.includes("marketplace")) title = "Mercado - Dashboard do Admin - Event Connect";
+      else if (path.includes("organizers")) title = "Organizadores - Dashboard do Admin - Event Connect";
+      else if (path.includes("pages")) title = "Páginas - Dashboard do Admin - Event Connect";
+      else if (path.includes("plans")) title = "Planos e Comissões - Dashboard do Admin - Event Connect";
+      else if (path.includes("manual_payments")) title = "Confirmações Manuais - Dashboard do Admin - Event Connect";
+      else title = "Dashboard do Admin - Event Connect";
     }
     
     document.title = title;
