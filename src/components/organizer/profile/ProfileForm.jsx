@@ -12,15 +12,26 @@ const getInitials = (nameStr) => {
   return names.length > 1 ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase() : nameStr.substring(0, 2).toUpperCase();
 };
 
-const ProfileForm = ({ formData, handleInputChange, isEditing, loadingSubmit }) => {
+const ProfileForm = ({ formData, handleInputChange, isEditing, loadingSubmit, handleFileChange }) => {
   return (
     <Card className="shadow-lg rounded-xl overflow-hidden mt-4">
       <CardHeader className="bg-gradient-to-r from-slate-700 to-slate-800 p-8 text-white">
         <div className="flex flex-col items-center sm:flex-row sm:items-start">
-          <Avatar className="h-32 w-32 border-4 border-slate-500 shadow-lg bg-slate-600">
-            <AvatarImage src={formData.logo_url || formData.profile_image_url || undefined} alt={formData.company_name || formData.name} />
-            <AvatarFallback className="text-4xl">{getInitials(formData.company_name || formData.name)}</AvatarFallback>
-          </Avatar>
+          <label htmlFor="profile-logo-upload" className="cursor-pointer group relative">
+            <Avatar className="h-32 w-32 border-4 border-slate-500 shadow-lg bg-slate-600 group-hover:opacity-80 transition-opacity">
+              <AvatarImage src={formData.logo_url || formData.profile_image_url || undefined} alt={formData.company_name || formData.name} />
+              <AvatarFallback className="text-4xl">{getInitials(formData.company_name || formData.name)}</AvatarFallback>
+            </Avatar>
+            <input
+              id="profile-logo-upload"
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={e => e.target.files && e.target.files[0] && handleFileChange(e.target.files[0], 'logo')}
+              disabled={loadingSubmit}
+            />
+            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Trocar foto/logo</span>
+          </label>
           <div className="sm:ml-6 mt-4 sm:mt-0 text-center sm:text-left">
             <CardTitle className="text-3xl font-bold">{formData.company_name || formData.name || 'Nome da Empresa/Organizador'}</CardTitle>
             <CardDescription className="text-slate-300 mt-1">{formData.email}</CardDescription>

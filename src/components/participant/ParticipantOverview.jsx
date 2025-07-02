@@ -1,203 +1,201 @@
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Clock, Trophy, Star, Heart, Users, TrendingUp, Briefcase, Ticket } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Hourglass, AlertTriangle, CheckCircle, XCircle, Upload } from 'lucide-react';
 import { useEvents } from '@/contexts/EventContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/contexts/ProfileContext';
 import { useToast } from '@/components/ui/use-toast';
+import { formatPrice } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { supabase } from '@/lib/customSupabaseClient';
 
-const ParticipantOverview = () => {
-  const { user } = useAuth();
-  const { events, getUserRegistrations, loadingEvents, loadingRegistrations } = useEvents();
-  const { toast } = useToast();
+const statusConfig = {
+  pending_payment: { text: 'Aguardando pagamento', color: 'yellow', icon: AlertTriangle },
+  pending_approval: { text: 'Aguardando liberação', color: 'blue', icon: Hourglass },
+  confirmed: { text: 'Pago', color: 'green', icon: CheckCircle },
+  rejected: { text: 'Inscrição Rejeitada', color: 'red', icon: XCircle },
+  cancelled: { text: 'Cancelada', color: 'gray', icon: XCircle },
+};
 
-  if (loadingEvents || loadingRegistrations) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+const RegistrationCard = ({ registration, onCancel, onUploadProof }) => {
+  const { event } = registration;
+  const status = statusConfig[registration.status] || { text: registration.status, color: 'gray', icon: AlertTriangle };
+  const StatusIcon = status.icon;
+  const canCancel = ['pending_payment', 'pending_approval'].includes(registration.status);
+  const canUploadProof = registration.status === 'pending_payment';
 
-  const userRegistrations = getUserRegistrations(user?.id || '');
-  const registeredEvents = events.filter(event => 
-    userRegistrations.some(reg => reg.event_id === event.id)
-  );
-
-  const upcomingEvents = registeredEvents.filter(event => 
-    new Date(event.date) >= new Date()
-  ).sort((a,b) => new Date(a.date) - new Date(b.date));
-
-  const pastEvents = registeredEvents.filter(event => 
-    new Date(event.date) < new Date()
-  ).sort((a,b) => new Date(b.date) - new Date(a.date));
-
-  const handleActionToast = (message) => {
-    toast({
-      title: "🚧 Funcionalidade em Breve!",
-      description: message || "Esta funcionalidade ainda não foi implementada. Você pode solicitá-la no seu próximo prompt! 🚀",
-    });
-  };
-
-  const StatCard = ({ title, value, icon: Icon, color, unit }) => (
-    <Card className="dashboard-card card-hover transform transition-all duration-300 hover:scale-105">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-gray-700">{title}</CardTitle>
-        <Icon className={`h-5 w-5 ${color}`} />
-      </CardHeader>
-      <CardContent>
-        <div className={`text-3xl font-bold ${color}`}>{value || 'N/A'}
-          {unit && <span className="text-lg ml-1">{unit}</span>}
+  return (
+    <Card className="mb-4">
+      <CardContent className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 py-4">
+        <div className="flex items-center gap-3">
+          <Calendar className="text-muted-foreground" />
+          <div>
+            <div className="font-semibold text-lg">{event?.name}</div>
+            <div className="text-xs text-muted-foreground">{event?.start_date} {event?.start_time && `às ${event.start_time}`}</div>
+            <div className="text-xs text-muted-foreground">Valor: {formatPrice(event?.price)}</div>
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-2">
+          <Badge variant={status.color} className="flex items-center gap-1">
+            <StatusIcon size={16} /> {status.text}
+          </Badge>
+          {canUploadProof && (
+            <Button variant="outline" size="sm" onClick={() => onUploadProof(registration)}>
+              <Upload className="h-4 w-4 mr-1" /> Enviar comprovante
+            </Button>
+          )}
+          {canCancel && (
+            <Button variant="destructive" size="sm" onClick={() => onCancel(registration.id)}>
+              Cancelar inscrição
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
   );
+};
 
-  const EventListItem = ({ event, isUpcoming }) => (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className={`border rounded-xl p-4 md:p-6 shadow-sm hover:shadow-lg transition-all duration-300 ${isUpcoming ? 'bg-white' : 'bg-gray-50'}`}
-    >
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-        <div className="flex-1 mb-3 md:mb-0">
-          <h3 className="font-semibold text-lg text-gray-900 mb-1">
-            {event.name}
-          </h3>
-          <div className="flex items-center space-x-2 text-sm text-gray-600 mb-1">
-            <Calendar className="h-4 w-4" />
-            <span>{new Date(event.date).toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} às {event.time}</span>
-          </div>
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <MapPin className="h-4 w-4" />
-            <span>{event.location}</span>
-          </div>
-        </div>
-        <div className="flex space-x-2 mt-2 md:mt-0">
-          <Link to={`/event/${event.id}`}>
-            <Button size="sm" variant="outline" className="text-blue-600 border-blue-600 hover:bg-blue-50">
-              Ver Detalhes
-            </Button>
-          </Link>
-          {!isUpcoming && (
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => handleActionToast('Certificados estarão disponíveis em breve.')}
-              className="text-green-600 border-green-600 hover:bg-green-50"
-            >
-              <Trophy className="h-4 w-4 mr-1.5" />
-              Certificado
-            </Button>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
+const ParticipantOverview = () => {
+  const { profile } = useProfile();
+  const { events, getUserRegistrations } = useEvents();
+  const { toast } = useToast();
+  const [registrations, setRegistrations] = useState(() => {
+    const userRegistrations = getUserRegistrations(profile?.id || '');
+    return userRegistrations.map(reg => ({
+      ...reg,
+      event: events.find(e => e.id === reg.event_id)
+    })).filter(reg => reg.event);
+  });
+
+  // Upload modal state
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [selectedRegistration, setSelectedRegistration] = useState(null);
+  const [file, setFile] = useState(null);
+
+  // Função para cancelar inscrição (apenas frontend)
+  const handleCancel = (id) => {
+    setRegistrations(prev => prev.filter(r => r.id !== id));
+    toast({
+      title: 'Inscrição cancelada',
+      description: 'Sua inscrição foi cancelada com sucesso.',
+      variant: 'success',
+    });
+  };
+
+  // Função para abrir modal de upload
+  const handleUploadProof = (registration) => {
+    setSelectedRegistration(registration);
+    setUploadDialogOpen(true);
+    setFile(null);
+  };
+
+  // Função para upload do comprovante
+  const handleUpload = async () => {
+    if (!file || !selectedRegistration) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const filePath = `proofs/${selectedRegistration.id}_${Date.now()}.${ext}`;
+      const { data, error: uploadError } = await supabase.storage.from('user_files').upload(filePath, file);
+      if (uploadError) throw uploadError;
+      const { publicURL } = supabase.storage.from('user_files').getPublicUrl(filePath).data;
+      // Atualiza no banco
+      const { error: updateError } = await supabase
+        .from('registrations')
+        .update({ payment_proof_url: publicURL, status: 'pending_approval' })
+        .eq('id', selectedRegistration.id);
+      if (updateError) throw updateError;
+      // Atualiza localmente
+      setRegistrations(prev => prev.map(r => r.id === selectedRegistration.id ? { ...r, payment_proof_url: publicURL, status: 'pending_approval' } : r));
+      toast({ title: 'Comprovante enviado', description: 'Seu comprovante foi enviado para análise.', variant: 'success' });
+      setUploadDialogOpen(false);
+    } catch (err) {
+      toast({ title: 'Erro ao enviar comprovante', description: err.message, variant: 'destructive' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Separação das inscrições por status e data
+  const now = new Date();
+  const isPast = (event) => {
+    if (!event?.end_date && !event?.start_date) return false;
+    const end = event?.end_date || event?.start_date;
+    return new Date(end) < now;
+  };
+  const isUpcoming = (event) => {
+    if (!event?.start_date) return false;
+    return new Date(event.start_date) >= now;
+  };
+
+  const pendingApproval = registrations.filter(r => r.status === 'pending_approval');
+  const pendingPayment = registrations.filter(r => r.status === 'pending_payment');
+  const confirmedUpcoming = registrations.filter(r => r.status === 'confirmed' && isUpcoming(r.event));
+  const pastEvents = registrations.filter(r => r.status === 'confirmed' && isPast(r.event));
 
   return (
     <div className="space-y-8">
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Eventos Inscritos" value={registeredEvents.length} icon={Users} color="text-blue-600" />
-        <StatCard title="Próximos Eventos" value={upcomingEvents.length} icon={Clock} color="text-orange-600" />
-        <StatCard title="Código da Sorte" value={user?.participant_code} icon={Ticket} color="text-yellow-600" />
-        <StatCard title="Eventos Concluídos" value={pastEvents.length} icon={Trophy} color="text-green-600" />
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-8">
-        <Card className="shadow-lg rounded-xl overflow-hidden">
-          <CardHeader className="bg-gray-50 border-b">
-            <CardTitle className="flex items-center space-x-2 text-gray-800">
-              <Clock className="h-6 w-6 text-orange-500" />
-              <span className="text-xl">Próximos Eventos</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 md:p-6">
-            {upcomingEvents.length === 0 ? (
-              <div className="text-center py-10">
-                <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-600 text-lg mb-4">
-                  Nenhum evento agendado por enquanto.
-                </p>
-                <Link to="/events">
-                  <Button className="btn-primary text-white px-6 py-3 text-base">
-                    <TrendingUp className="h-5 w-5 mr-2" />
-                    Explorar Novos Eventos
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {upcomingEvents.map((event) => (
-                  <EventListItem key={event.id} event={event} isUpcoming={true} />
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg rounded-xl overflow-hidden">
-          <CardHeader className="bg-gray-50 border-b">
-            <CardTitle className="flex items-center space-x-2 text-gray-800">
-              <Trophy className="h-6 w-6 text-green-500" />
-              <span className="text-xl">Eventos Concluídos</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 md:p-6">
-            {pastEvents.length === 0 ? (
-              <div className="text-center py-10">
-                <Trophy className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-600 text-lg">
-                  Participe de eventos para ver seu histórico aqui.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {pastEvents.map((event) => (
-                  <EventListItem key={event.id} event={event} isUpcoming={false} />
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="shadow-lg rounded-xl overflow-hidden">
-        <CardHeader className="bg-gray-50 border-b">
-          <CardTitle className="flex items-center space-x-2 text-gray-800">
-            <Briefcase className="h-6 w-6 text-indigo-500" />
-            <span className="text-xl">Ações Rápidas</span>
-          </CardTitle>
+      <Card>
+        <CardHeader>
+          <CardTitle>Minhas Inscrições</CardTitle>
+          <CardDescription>Acompanhe o status de todas as suas inscrições em eventos.</CardDescription>
         </CardHeader>
-        <CardContent className="p-4 md:p-6">
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <Link to="/events">
-              <Button className="w-full h-16 btn-primary text-white text-base">
-                <Calendar className="h-5 w-5 mr-2" />
-                Explorar Eventos
-              </Button>
-            </Link>
-            <Button 
-              onClick={() => handleActionToast('Em breve: visualize todos os seus certificados aqui.')}
-              className="w-full h-16 btn-orange text-white text-base"
-            >
-              <Trophy className="h-5 w-5 mr-2" />
-              Meus Certificados
-            </Button>
-            <Button 
-              onClick={() => handleActionToast('Compartilhe suas conquistas nas redes sociais!')}
-              variant="outline" 
-              className="w-full h-16 text-base text-purple-600 border-purple-600 hover:bg-purple-50"
-            >
-              <Heart className="h-5 w-5 mr-2" />
-              Compartilhar
-            </Button>
-          </div>
+        <CardContent>
+          {/* Seção: Aguardando Liberação */}
+          {pendingApproval.length > 0 && (
+            <div className="mb-6">
+              <h3 className="font-semibold mb-2 text-blue-700">Aguardando Liberação</h3>
+              {pendingApproval.map(reg => <RegistrationCard key={reg.id} registration={reg} onCancel={handleCancel} />)}
+            </div>
+          )}
+          {/* Seção: Pagamentos Pendentes */}
+          {pendingPayment.length > 0 && (
+            <div className="mb-6">
+              <h3 className="font-semibold mb-2 text-yellow-700">Pagamentos Pendentes</h3>
+              {pendingPayment.map(reg => <RegistrationCard key={reg.id} registration={reg} onCancel={handleCancel} onUploadProof={handleUploadProof} />)}
+            </div>
+          )}
+          {/* Seção: Próximos Eventos */}
+          {confirmedUpcoming.length > 0 && (
+            <div className="mb-6">
+              <h3 className="font-semibold mb-2 text-green-700">Próximos Eventos</h3>
+              {confirmedUpcoming.map(reg => <RegistrationCard key={reg.id} registration={reg} />)}
+            </div>
+          )}
+          {/* Seção: Eventos Passados */}
+          {pastEvents.length > 0 && (
+            <div className="mb-6">
+              <h3 className="font-semibold mb-2 text-gray-700">Eventos Passados</h3>
+              {pastEvents.map(reg => <RegistrationCard key={reg.id} registration={reg} />)}
+            </div>
+          )}
+          {/* Caso não haja inscrições */}
+          {registrations.length === 0 && (
+            <div className="text-center text-muted-foreground py-8">Você ainda não se inscreveu em nenhum evento.</div>
+          )}
         </CardContent>
       </Card>
+      {/* Modal de upload de comprovante */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enviar comprovante de pagamento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input type="file" accept="image/*,application/pdf" onChange={e => setFile(e.target.files[0])} />
+            {file && <div className="text-sm text-gray-600">Arquivo selecionado: {file.name}</div>}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setUploadDialogOpen(false)} variant="outline">Cancelar</Button>
+            <Button onClick={handleUpload} disabled={!file || uploading} className="btn-primary text-white">
+              {uploading ? 'Enviando...' : 'Enviar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

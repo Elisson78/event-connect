@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/contexts/ProfileContext';
@@ -87,7 +86,7 @@ const OrganizerProfile = () => {
     if (!url) return null;
     try {
       const urlObject = new URL(url);
-      const path = urlObject.pathname.split('/organizerassets/')[1];
+      const path = urlObject.pathname.split('/user_files/')[1];
       return path ? decodeURIComponent(path) : null;
     } catch (error) {
       console.error("Invalid URL for path extraction:", url, error);
@@ -106,7 +105,7 @@ const OrganizerProfile = () => {
 
     setLoadingSubmit(true);
     try {
-      const { error: deleteError } = await supabase.storage.from('organizerassets').remove([path]);
+      const { error: deleteError } = await supabase.storage.from('user_files').remove([path]);
       if (deleteError) throw deleteError;
 
       const updateData = { [type + '_url']: null };
@@ -135,10 +134,10 @@ const OrganizerProfile = () => {
     const fileName = `${userId}-${Date.now()}.${fileExt}`;
     const filePath = `${bucketFolder}/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage.from('organizerassets').upload(filePath, file, { upsert: true });
+    const { error: uploadError } = await supabase.storage.from('user_files').upload(filePath, file, { upsert: true });
     if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase.storage.from('organizerassets').getPublicUrl(filePath);
+    const { data: { publicUrl } } = supabase.storage.from('user_files').getPublicUrl(filePath);
     return publicUrl;
   };
 
@@ -210,6 +209,7 @@ const OrganizerProfile = () => {
               handleInputChange={handleInputChange}
               isEditing={isEditing}
               loadingSubmit={loadingSubmit}
+              handleFileChange={handleFileChange}
             />
           </TabsContent>
           

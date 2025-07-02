@@ -173,6 +173,20 @@ const AdminMarketplace = () => {
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={plan.is_active}
+                  onCheckedChange={async (checked) => {
+                    const { error } = await supabase.from('ad_plans').update({ is_active: checked }).eq('id', plan.id);
+                    if (error) {
+                      toast({ title: 'Erro ao atualizar status', description: error.message, variant: 'destructive' });
+                    } else {
+                      setPlans((prev) => prev.map(p => p.id === plan.id ? { ...p, is_active: checked } : p));
+                    }
+                  }}
+                  className="mr-2"
+                />
+              </div>
             </div>
           ))}
         </div>

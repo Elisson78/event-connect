@@ -161,6 +161,42 @@ const OrganizerRegistrations = () => {
 
   const organizerEventsList = events.filter(event => event.organizer_id === user?.id);
 
+  // Funções para aprovar/rejeitar inscrição
+  const handleApprove = async (registrationId) => {
+    // Aqui você pode chamar a API para aprovar a inscrição
+    toast({ title: 'Inscrição liberada', description: 'O participante foi aprovado.', variant: 'success' });
+    // Atualize a lista após aprovação (mock)
+    setRegistrationsWithDetails(prev => prev.map(r => r.id === registrationId ? { ...r, status: 'confirmed' } : r));
+  };
+  const handleReject = async (registrationId) => {
+    // Aqui você pode chamar a API para rejeitar a inscrição
+    toast({ title: 'Inscrição rejeitada', description: 'O participante foi rejeitado.', variant: 'destructive' });
+    // Atualize a lista após rejeição (mock)
+    setRegistrationsWithDetails(prev => prev.map(r => r.id === registrationId ? { ...r, status: 'rejected' } : r));
+  };
+  const handleMessage = (participant) => {
+    toast({ title: 'Mensagem', description: `Abrir chat/mensagem para ${participant.name} (em breve)` });
+  };
+  const handleViewProof = (registration) => {
+    toast({ title: 'Comprovante', description: 'Visualização de comprovante em breve.' });
+  };
+  // Exportar lista de inscritos (CSV)
+  const handleExportCSV = () => {
+    const csvRows = [
+      ['Nome', 'E-mail', 'Evento', 'Status'],
+      ...filteredRegistrations.map(r => [r.participant.name, r.participant.email, r.event.name, r.status])
+    ];
+    const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.map(e => e.join(',')).join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'inscritos.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: 'Exportado', description: 'Lista de inscritos exportada para CSV.' });
+  };
+
   if (loadingEvents || loadingRegistrations) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-200px)]">
@@ -199,11 +235,9 @@ const OrganizerRegistrations = () => {
               <CardTitle className="text-2xl font-bold text-gray-800">Inscritos nos Seus Eventos</CardTitle>
               <CardDescription>Visualize e gerencie os participantes dos seus eventos.</CardDescription>
             </div>
-            <div className="flex items-center space-x-2">
-                <Button variant="outline" onClick={handleExportData} className="text-green-600 border-green-600 hover:bg-green-50">
-                    <Download className="h-4 w-4 mr-2" /> Exportar
-                </Button>
-            </div>
+            <Button onClick={handleExportCSV} variant="outline" className="flex items-center gap-2">
+              <Download className="h-4 w-4" /> Baixar lista (CSV)
+            </Button>
           </div>
           <div className="mt-4 flex flex-col md:flex-row gap-4">
             <div className="relative flex-grow">
@@ -246,50 +280,62 @@ const OrganizerRegistrations = () => {
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Participante</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Evento</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data Inscrição</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Recibo</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   <AnimatePresence>
-                    {filteredRegistrations.map((reg) => (
-                      <motion.tr 
-                        key={reg.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <Avatar className="h-10 w-10 mr-3">
-                              <AvatarImage src={reg.participant?.avatar_url || reg.participant?.profile_image_url} alt={reg.participant?.name} />
-                              <AvatarFallback>{reg.participant?.name?.substring(0,1) || 'P'}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">{reg.participant?.name}</div>
-                              <div className="text-xs text-gray-500">{reg.participant?.email}</div>
+                    {filteredRegistrations.map((reg) => {
+                      const status = (reg.status || '').toLowerCase();
+                      const isPending = status === 'pending_approval' || status === 'pending payment' || status === 'pending_payment' || status === 'pending';
+                      return (
+                        <motion.tr 
+                          key={reg.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <Avatar className="h-10 w-10 mr-3">
+                                <AvatarImage src={reg.participant?.avatar_url || reg.participant?.profile_image_url} alt={reg.participant?.name} />
+                                <AvatarFallback>{reg.participant?.name?.substring(0,1) || 'P'}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{reg.participant?.name}</div>
+                                <div className="text-xs text-gray-500">{reg.participant?.email}</div>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{reg.event?.name}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-bold text-gray-700">{reg.participant?.participant_code}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500">{new Date(reg.registered_at).toLocaleDateString('pt-BR')}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <Button variant="ghost" size="sm" onClick={() => handleViewDetails(reg.participant, reg.event?.name)} className="text-blue-600 hover:text-blue-800">
-                            <Eye className="h-5 w-5 mr-1" /> Visualizar
-                          </Button>
-                        </td>
-                      </motion.tr>
-                    ))}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{reg.event?.name}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap capitalize">{reg.status.replace('_', ' ')}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            {reg.payment_proof_url ? (
+                              <Button size="sm" variant="outline" onClick={() => window.open(reg.payment_proof_url, '_blank')} title="Visualizar Recibo">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            ) : (
+                              <span className="text-gray-400 text-xs">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap flex flex-wrap gap-2">
+                            {isPending && (
+                              <>
+                                <Button size="sm" variant="success" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleApprove(reg.id)}>Liberar</Button>
+                                <Button size="sm" variant="destructive" onClick={() => handleReject(reg.id)}>Rejeitar</Button>
+                              </>
+                            )}
+                            <Button size="sm" variant="outline" onClick={() => handleViewDetails(reg.participant, reg.event.name)}>Ver detalhes</Button>
+                          </td>
+                        </motion.tr>
+                      );
+                    })}
                   </AnimatePresence>
                 </tbody>
               </table>

@@ -33,6 +33,8 @@ const OrganizerMarketplace = () => {
     });
   };
 
+  const activePlans = adPlans.filter(plan => plan.is_active);
+
   if (loadingAdPlans) {
     return (
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -55,7 +57,7 @@ const OrganizerMarketplace = () => {
     );
   }
 
-  const plansByPlatform = adPlans.reduce((acc, plan) => {
+  const plansByPlatform = activePlans.reduce((acc, plan) => {
     (acc[plan.platform] = acc[plan.platform] || []).push(plan);
     return acc;
   }, {});

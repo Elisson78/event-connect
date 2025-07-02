@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { formatPrice } from '@/lib/utils';
 
 const ParticipantMyEvents = () => {
   const { profile } = useProfile();
@@ -95,24 +96,35 @@ const ParticipantMyEvents = () => {
     );
   }
 
-  const RegistrationCardItem = ({ registration, isPastEvent = false }) => {
+  const statusConfig = {
+    pending_payment: { text: 'Aguardando pagamento', color: 'yellow', icon: AlertTriangle },
+    pending_approval: { text: 'Aguardando liberação', color: 'blue', icon: Hourglass },
+    confirmed: { text: 'Pago', color: 'green', icon: CheckCircle },
+    rejected: { text: 'Inscrição Rejeitada', color: 'red', icon: XCircle },
+    cancelled: { text: 'Cancelada', color: 'gray', icon: XCircle },
+  };
+
+  const RegistrationCardItem = ({ registration, isPastEvent = false, onRemove }) => {
     const { event } = registration;
+    const status = statusConfig[registration.status] || { text: registration.status, color: 'gray', icon: AlertTriangle };
+    const StatusIcon = status.icon;
 
-    const statusConfig = {
-      pending_payment: { text: 'Aguardando pagamento', variant: 'warning', icon: AlertTriangle },
-      pending_approval: { text: 'Aguardando liberação', variant: 'secondary', icon: Hourglass },
-      confirmed: { text: 'Pago', variant: 'success', icon: CheckCircle },
-      rejected: { text: 'Inscrição Rejeitada', variant: 'destructive', icon: XCircle },
-      cancelled: { text: 'Cancelada', variant: 'outline', icon: XCircle },
-    };
-
-    const currentStatus = statusConfig[registration.status] || { text: registration.status, variant: 'default', icon: AlertTriangle };
-    const StatusIcon = currentStatus.icon;
-
-    // Formata o valor do evento
-    const formatCurrency = (value) => {
-      if (!value || isNaN(Number(value))) return 'Gratuito';
-      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value));
+    // Botões de ação por status
+    const renderActions = () => {
+      switch (registration.status) {
+        case 'pending_payment':
+          return <Button variant="outline" size="sm">Pagar agora</Button>;
+        case 'pending_approval':
+          return <Button variant="secondary" size="sm">Ver detalhes</Button>;
+        case 'confirmed':
+          return <Button variant="success" size="sm">Baixar comprovante</Button>;
+        case 'rejected':
+          return <Button variant="destructive" size="sm">Ver motivo</Button>;
+        case 'cancelled':
+          return <Button variant="outline" size="sm" onClick={() => onRemove(registration.id)}>Remover</Button>;
+        default:
+          return null;
+      }
     };
 
     return (
@@ -125,15 +137,15 @@ const ParticipantMyEvents = () => {
         <div className="p-6 flex-grow">
           <div className="flex justify-between items-start mb-3">
             <h3 className="text-lg font-semibold text-gray-800 mb-2 pr-2 flex-1">{event.name}</h3>
-            <Badge variant={currentStatus.variant} className="flex-shrink-0">
+            <Badge variant={status.color} className="flex-shrink-0">
               <StatusIcon className="h-3 w-3 mr-1.5" />
-              {currentStatus.text}
+              {status.text}
             </Badge>
           </div>
           <div className="space-y-2 text-sm text-gray-600 mb-4">
             <div className="flex items-center"><Calendar className="h-4 w-4 mr-2 text-blue-500" /><span>{new Date(event.date).toLocaleDateString('pt-BR')} às {event.time}</span></div>
             <div className="flex items-center"><MapPin className="h-4 w-4 mr-2 text-blue-500" /><span className="truncate">{event.location}</span></div>
-            <div className="flex items-center"><FileText className="h-4 w-4 mr-2 text-green-600" /><span><b>Valor:</b> {formatCurrency(event.price)}</span></div>
+            <div className="flex items-center"><FileText className="h-4 w-4 mr-2 text-green-600" /><span><b>Valor:</b> {formatPrice(event.price)}</span></div>
           </div>
         </div>
         <div className="bg-gray-50 p-4 flex flex-col sm:flex-row gap-2">
@@ -148,6 +160,7 @@ const ParticipantMyEvents = () => {
               <CheckCircle className="h-4 w-4 mr-2" /> Ver Certificado
             </Button>
           )}
+          {renderActions()}
         </div>
       </motion.div>
     );
