@@ -13,8 +13,10 @@ import { useToast } from '@/components/ui/use-toast';
 const initialFormData = {
   name: '',
   description: '',
-  date: '',
-  time: '',
+  start_date: '',
+  end_date: '',
+  start_time: '',
+  end_time: '',
   location: '',
   card_image_url: '', 
   banner_image_url: '',
@@ -65,29 +67,33 @@ const OrganizerOverview = () => {
     const testEventsData = [
       {
         name: 'Corrida Matinal de Verão',
-        description: 'Participe da nossa corrida de 5km pela orla da praia, começando bem cedinho para aproveitar o nascer do sol. Kit atleta incluso!',
-        date: '2025-07-20',
-        time: '06:00',
+        description: 'Participe da nossa corrida de 5km pela orla da praia. Kit atleta incluso!',
+        start_date: '2025-07-20',
+        end_date: '2025-07-20',
+        start_time: '06:00',
+        end_time: '09:00',
         location: 'Praia Central - Rio de Janeiro, RJ',
         card_image_url: 'https://source.unsplash.com/random/400x300?running,morning',
         banner_image_url: 'https://source.unsplash.com/random/1200x400?running,beach,sunrise',
         category_id: events.find(e => e?.category?.name === 'Corrida')?.category_id || null,
         details: { distance: '5km', kit_details: 'Camiseta, Viseira e Medalha' },
         max_participants: 200,
-        price: 'R$ 75,00',
+        price: 75.00,
       },
       {
         name: 'Desafio de Ciclismo nas Montanhas',
-        description: 'Um percurso desafiador de 50km com trilhas e vistas incríveis. Para ciclistas experientes que buscam adrenalina.',
-        date: '2025-08-15',
-        time: '08:00',
+        description: 'Um percurso desafiador de 50km com trilhas e vistas incríveis.',
+        start_date: '2025-08-15',
+        end_date: '2025-08-15',
+        start_time: '08:00',
+        end_time: '14:00',
         location: 'Serra da Mantiqueira - Campos do Jordão, SP',
         card_image_url: 'https://source.unsplash.com/random/400x300?cycling,mountain',
         banner_image_url: 'https://source.unsplash.com/random/1200x400?cycling,mountain,trail',
         category_id: events.find(e => e?.category?.name === 'Ciclismo')?.category_id || null,
         details: { distance: '50km' },
         max_participants: 100,
-        price: 'R$ 120,00',
+        price: 120.00,
       }
     ];
 
@@ -113,18 +119,99 @@ const OrganizerOverview = () => {
     e.preventDefault();
     if (!user?.id) {
       toast({ title: "Erro", description: "Usuário organizador não identificado.", variant: "destructive" });
-      setIsSubmitting(false);
       return;
     }
+
+    // Debug: Log form data before validation
+    console.log('=== FORM SUBMISSION DEBUG ===');
+    console.log('Form data before validation:', formData);
+    console.log('start_date:', formData.start_date, 'type:', typeof formData.start_date);
+    console.log('start_time:', formData.start_time, 'type:', typeof formData.start_time);
+    console.log('end_date:', formData.end_date, 'type:', typeof formData.end_date);
+    console.log('end_time:', formData.end_time, 'type:', typeof formData.end_time);
+    console.log('================================');
+
+    // --- Validação robusta dos dados do formulário ---
+    if (!formData.name || !formData.start_date || !formData.start_time || !formData.location || !formData.max_participants) {
+        console.log('Validation failed - missing required fields');
+        console.log('name:', !!formData.name);
+        console.log('start_date:', !!formData.start_date);
+        console.log('start_time:', !!formData.start_time);
+        console.log('location:', !!formData.location);
+        console.log('max_participants:', !!formData.max_participants);
+        
+        toast({
+            title: "Campos Obrigatórios",
+            description: "Por favor, preencha todos os campos obrigatórios (Nome, Data/Hora de Início, Local, Máx. Participantes).",
+            variant: "destructive",
+        });
+        return;
+    }
+
+    if (formData.end_date && formData.start_date > formData.end_date) {
+        toast({
+            title: "Data Inválida",
+            description: "A data de término não pode ser anterior à data de início.",
+            variant: "destructive",
+        });
+        return;
+    }
+
+    if (formData.start_date === formData.end_date && formData.end_time && formData.start_time > formData.end_time) {
+        toast({
+            title: "Horário Inválido",
+            description: "O horário de término não pode ser anterior ao horário de início no mesmo dia.",
+            variant: "destructive",
+        });
+        return;
+    }
+    // --- Fim da Validação ---
+
     setIsSubmitting(true);
     try {
+      // Limpa e converte o valor do preço para um formato numérico que o banco de dados aceita.
+      // Remove "R$", outros caracteres não numéricos (exceto vírgula/ponto) e converte vírgula para ponto.
+      // Se o campo estiver vazio, define como null.
+      const priceValue = formData.price 
+        ? parseFloat(String(formData.price).replace(/[^0-9,.]/g, '').replace(',', '.')) 
+        : null;
+
+      // Formata as datas para o formato correto (YYYY-MM-DD)
+      const formatDate = (dateString) => {
+        if (!dateString || dateString.trim() === '') return null;
+        // Garante que a data está no formato YYYY-MM-DD
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return null;
+        return date.toISOString().split('T')[0];
+      };
+
       const eventPayload = {
         ...formData,
         organizer_id: user.id,
         max_participants: parseInt(formData.max_participants),
         current_participants: isEditing && editingEvent ? editingEvent.current_participants : 0,
         ad_plan_id: formData.ad_plan_id || null,
+        start_date: formatDate(formData.start_date), // Formata a data de início
+        end_date: formatDate(formData.end_date), // Formata a data de término
+        end_time: formData.end_time && formData.end_time.trim() !== '' ? formData.end_time : null, // Garante que horas vazias se tornem null
+        price: priceValue, // Usa o valor do preço limpo
       };
+
+      // Debug: Log final payload
+      console.log('=== FINAL PAYLOAD DEBUG ===');
+      console.log('Event payload:', eventPayload);
+      console.log('Payload start_date:', eventPayload.start_date);
+      console.log('Payload start_time:', eventPayload.start_time);
+      console.log('Payload end_date:', eventPayload.end_date);
+      console.log('Payload end_time:', eventPayload.end_time);
+      console.log('end_date type:', typeof eventPayload.end_date);
+      console.log('end_date is null:', eventPayload.end_date === null);
+      console.log('end_date is empty string:', eventPayload.end_date === '');
+      console.log('Original start_date:', formData.start_date);
+      console.log('Original end_date:', formData.end_date);
+      console.log('Formatted start_date:', formatDate(formData.start_date));
+      console.log('Formatted end_date:', formatDate(formData.end_date));
+      console.log('================================');
 
       if (isEditing && editingEvent) {
         await updateEvent(editingEvent.id, eventPayload);
@@ -138,6 +225,12 @@ const OrganizerOverview = () => {
       resetForm();
     } catch (error) {
       console.error("Error saving event:", error);
+      console.error("Error details:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
       toast({ title: "Erro ao salvar evento", description: error.message, variant: "destructive" });
     } finally {
       setIsSubmitting(false);
@@ -159,13 +252,16 @@ const OrganizerOverview = () => {
     setFormData({
       name: event.name,
       description: event.description,
-      date: event.date,
-      time: event.time,
+      start_date: event.start_date || '',
+      end_date: event.end_date || '',
+      start_time: event.start_time || '',
+      end_time: event.end_time || '',
       location: event.location,
       category_id: event.category_id,
       details: event.details || {},
       max_participants: event.max_participants.toString(),
-      price: event.price || '',
+      // Converte o preço para string para o formulário, tratando corretamente o valor 0.
+      price: event.price != null ? String(event.price) : '',
       status: event.status,
       current_participants: event.current_participants,
       card_image_url: event.card_image_url || '',

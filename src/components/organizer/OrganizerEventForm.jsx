@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DialogFooter } from '@/components/ui/dialog';
 import { Link2, Megaphone, Info } from 'lucide-react';
 import { useEvents } from '@/contexts/EventContext';
+import { formatPrice } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submitButtonText = "Criar Evento" }) => {
@@ -29,6 +30,31 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
     });
   };
 
+  const handleDateChange = (field, value) => {
+    console.log(`=== DATE CHANGE DEBUG ===`);
+    console.log(`Field: ${field}`);
+    console.log(`Value: "${value}"`);
+    console.log(`Value type: ${typeof value}`);
+    console.log(`Value length: ${value ? value.length : 0}`);
+    console.log(`Is empty string: ${value === ''}`);
+    console.log(`Is null: ${value === null}`);
+    console.log(`Is undefined: ${value === undefined}`);
+    console.log(`Before change - formData.${field}:`, formData[field]);
+    console.log(`========================`);
+    
+    onInputChange(field, value);
+    
+    // Log after change
+    setTimeout(() => {
+      console.log(`After change - formData.${field}:`, formData[field]);
+    }, 0);
+  };
+
+  const handleTimeChange = (field, value) => {
+    console.log(`Time field ${field} changed to:`, value);
+    onInputChange(field, value);
+  };
+
   const renderDynamicField = (field) => {
     const commonProps = {
       id: `details-${field.key}`,
@@ -47,12 +73,23 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
     }
   };
 
+  // Log form data for debugging
+  useEffect(() => {
+    console.log('Form data updated:', formData);
+  }, [formData]);
+
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="name">Nome do Evento</Label>
-          <Input id="name" value={formData.name} onChange={(e) => onInputChange('name', e.target.value)} required />
+          <Label htmlFor="name">Nome do Evento *</Label>
+          <Input 
+            id="name" 
+            value={formData.name} 
+            onChange={(e) => onInputChange('name', e.target.value)} 
+            required 
+            className={!formData.name ? 'border-red-500' : ''}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="category_id">Categoria do Evento</Label>
@@ -69,8 +106,14 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
         </div>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="description">Descrição</Label>
-        <Textarea id="description" value={formData.description} onChange={(e) => onInputChange('description', e.target.value)} required />
+        <Label htmlFor="description">Descrição *</Label>
+        <Textarea 
+          id="description" 
+          value={formData.description} 
+          onChange={(e) => onInputChange('description', e.target.value)} 
+          required 
+          className={!formData.description ? 'border-red-500' : ''}
+        />
       </div>
 
       <AnimatePresence>
@@ -94,22 +137,88 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
 
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="date">Data</Label>
-          <Input id="date" type="date" value={formData.date} onChange={(e) => onInputChange('date', e.target.value)} required />
+          <Label htmlFor="start_date">Data de Início *</Label>
+          <Input 
+            id="start_date" 
+            type="date" 
+            value={formData.start_date} 
+            onChange={(e) => handleDateChange('start_date', e.target.value)} 
+            required 
+            className={!formData.start_date ? 'border-red-500' : ''}
+          />
+          {!formData.start_date && (
+            <p className="text-xs text-red-500">Data de início é obrigatória</p>
+          )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="time">Horário</Label>
-          <Input id="time" type="time" value={formData.time} onChange={(e) => onInputChange('time', e.target.value)} required />
+          <Label htmlFor="end_date">Data de Término</Label>
+          <Input 
+            id="end_date" 
+            type="date" 
+            value={formData.end_date} 
+            onChange={(e) => handleDateChange('end_date', e.target.value)} 
+          />
+          {formData.end_date && (
+            <p className="text-xs text-green-500">✓ Data de término definida: {formData.end_date}</p>
+          )}
+          {!formData.end_date && (
+            <p className="text-xs text-gray-500">Opcional - deixe vazio se o evento for em um único dia</p>
+          )}
         </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="location">Local</Label>
-        <Input id="location" value={formData.location} onChange={(e) => onInputChange('location', e.target.value)} placeholder="Ex: São Paulo - SP" required />
       </div>
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="max_participants">Máximo de Participantes</Label>
-          <Input id="max_participants" type="number" value={formData.max_participants} onChange={(e) => onInputChange('max_participants', e.target.value)} required />
+          <Label htmlFor="start_time">Horário de Início *</Label>
+          <Input 
+            id="start_time" 
+            type="time" 
+            value={formData.start_time} 
+            onChange={(e) => handleTimeChange('start_time', e.target.value)} 
+            required 
+            className={!formData.start_time ? 'border-red-500' : ''}
+          />
+          {!formData.start_time && (
+            <p className="text-xs text-red-500">Horário de início é obrigatório</p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="end_time">Horário de Término</Label>
+          <Input 
+            id="end_time" 
+            type="time" 
+            value={formData.end_time} 
+            onChange={(e) => handleTimeChange('end_time', e.target.value)} 
+          />
+          {formData.end_time && (
+            <p className="text-xs text-green-500">✓ Horário de término definido: {formData.end_time}</p>
+          )}
+          {!formData.end_time && (
+            <p className="text-xs text-gray-500">Opcional - deixe vazio se não houver horário de término específico</p>
+          )}
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="location">Local *</Label>
+        <Input 
+          id="location" 
+          value={formData.location} 
+          onChange={(e) => onInputChange('location', e.target.value)} 
+          placeholder="Ex: São Paulo - SP" 
+          required 
+          className={!formData.location ? 'border-red-500' : ''}
+        />
+      </div>
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="max_participants">Máximo de Participantes *</Label>
+          <Input 
+            id="max_participants" 
+            type="number" 
+            value={formData.max_participants} 
+            onChange={(e) => onInputChange('max_participants', e.target.value)} 
+            required 
+            className={!formData.max_participants ? 'border-red-500' : ''}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="price">Preço (opcional)</Label>
@@ -163,9 +272,12 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
             <SelectItem value="none">Nenhum</SelectItem>
             {adPlans.map(plan => (
               <SelectItem key={plan.id} value={plan.id}>
-                <div className="flex justify-between items-center w-full">
-                  <span>{plan.name} ({plan.platform})</span>
-                  <span className="text-green-600 font-semibold">R$ {plan.price}</span>
+                <div className="flex flex-col w-full">
+                  <div className="flex justify-between items-center w-full">
+                    <span>{plan.name} ({plan.platform})</span>
+                    <span className="text-green-600 font-semibold">{formatPrice(plan.price)}</span>
+                  </div>
+                  {plan.description && <p className="text-xs text-gray-500 mt-1">{plan.description}</p>}
                 </div>
               </SelectItem>
             ))}

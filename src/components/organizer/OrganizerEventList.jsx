@@ -28,7 +28,11 @@ const OrganizerEventList = ({ events, onEdit, onDelete, onShowCreateDialog, getE
               <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-600">
                 <div className="flex items-center space-x-2">
                   <Calendar className="h-4 w-4" />
-                  <span>{new Date(event.date).toLocaleDateString('pt-BR')} às {event.time}</span>
+                  <span>
+                    {event.start_date ? new Date(event.start_date + 'T00:00:00Z').toLocaleDateString('pt-BR') : 'A definir'}
+                    {event.start_time && ` das ${event.start_time.substring(0, 5)}`}
+                    {event.end_time && ` às ${event.end_time.substring(0, 5)}`}
+                  </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Users className="h-4 w-4" />

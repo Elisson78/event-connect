@@ -51,6 +51,11 @@ const ParticipantMyEvents = () => {
     .filter(reg => new Date(reg.event.date) < new Date())
     .sort((a, b) => new Date(b.event.date) - new Date(a.event.date));
 
+  // Filtra inscrições aguardando liberação
+  const pendingApprovalRegistrations = myRegistrations.filter(reg => reg.status === 'pending_approval');
+  // Filtra próximos eventos (excluindo os aguardando liberação)
+  const upcomingRegistrationsFiltered = upcomingRegistrations.filter(reg => reg.status !== 'pending_approval');
+
   const handleOpenUploadDialog = (registration) => {
     setSelectedRegistration(registration);
     setFile(null);
@@ -94,15 +99,21 @@ const ParticipantMyEvents = () => {
     const { event } = registration;
 
     const statusConfig = {
-      pending_payment: { text: 'Pendente de Pagamento', variant: 'warning', icon: AlertTriangle },
-      pending_approval: { text: 'Aguardando Aprovação', variant: 'secondary', icon: Hourglass },
-      confirmed: { text: 'Inscrição Confirmada', variant: 'success', icon: CheckCircle },
+      pending_payment: { text: 'Aguardando pagamento', variant: 'warning', icon: AlertTriangle },
+      pending_approval: { text: 'Aguardando liberação', variant: 'secondary', icon: Hourglass },
+      confirmed: { text: 'Pago', variant: 'success', icon: CheckCircle },
       rejected: { text: 'Inscrição Rejeitada', variant: 'destructive', icon: XCircle },
       cancelled: { text: 'Cancelada', variant: 'outline', icon: XCircle },
     };
 
     const currentStatus = statusConfig[registration.status] || { text: registration.status, variant: 'default', icon: AlertTriangle };
     const StatusIcon = currentStatus.icon;
+
+    // Formata o valor do evento
+    const formatCurrency = (value) => {
+      if (!value || isNaN(Number(value))) return 'Gratuito';
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value));
+    };
 
     return (
       <motion.div
@@ -122,6 +133,7 @@ const ParticipantMyEvents = () => {
           <div className="space-y-2 text-sm text-gray-600 mb-4">
             <div className="flex items-center"><Calendar className="h-4 w-4 mr-2 text-blue-500" /><span>{new Date(event.date).toLocaleDateString('pt-BR')} às {event.time}</span></div>
             <div className="flex items-center"><MapPin className="h-4 w-4 mr-2 text-blue-500" /><span className="truncate">{event.location}</span></div>
+            <div className="flex items-center"><FileText className="h-4 w-4 mr-2 text-green-600" /><span><b>Valor:</b> {formatCurrency(event.price)}</span></div>
           </div>
         </div>
         <div className="bg-gray-50 p-4 flex flex-col sm:flex-row gap-2">
@@ -149,15 +161,25 @@ const ParticipantMyEvents = () => {
           <CardDescription>Acompanhe o status de todas as suas inscrições em eventos.</CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Seção aguardando liberação */}
+          {pendingApprovalRegistrations.length > 0 && (
+            <>
+              <h3 className="text-xl font-semibold text-yellow-700 mb-4 flex items-center gap-2"><Hourglass className="h-5 w-5 text-yellow-500" />Aguardando Liberação</h3>
+              <div className="grid md:grid-cols-2 gap-6 mb-8">
+                {pendingApprovalRegistrations.map(reg => <RegistrationCardItem key={reg.id} registration={reg} />)}
+              </div>
+            </>
+          )}
+
           <h3 className="text-xl font-semibold text-gray-800 mb-4">Próximos Eventos</h3>
-          {upcomingRegistrations.length === 0 ? (
+          {upcomingRegistrationsFiltered.length === 0 ? (
             <div className="text-center py-10 border-2 border-dashed rounded-lg">
               <p className="text-gray-500 mb-4">Você não tem inscrições para eventos futuros.</p>
               <Link to="/events"><Button>Explorar Eventos</Button></Link>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 gap-6">
-              {upcomingRegistrations.map(reg => <RegistrationCardItem key={reg.id} registration={reg} />)}
+              {upcomingRegistrationsFiltered.map(reg => <RegistrationCardItem key={reg.id} registration={reg} />)}
             </div>
           )}
 

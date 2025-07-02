@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from './AuthContext';
@@ -46,12 +45,14 @@ export const EventProvider = ({ children }) => {
         console.error("Error fetching event categories:", error);
         setEventCategories([]);
       } else {
+        console.log("Fetched event categories:", data);
         setEventCategories(data || []);
       }
     } catch (networkError) {
       handleNetworkError(networkError, 'fetchEventCategories');
     } finally {
       setLoadingEventCategories(false);
+      console.log("Loading event categories finished. State:", false);
     }
   }, []);
 
@@ -72,7 +73,7 @@ export const EventProvider = ({ children }) => {
             details_schema
           )
         `)
-        .order('date', { ascending: true });
+        .order('start_date', { ascending: true });
 
       if (error) {
         console.error("Error fetching events:", error);
@@ -91,17 +92,19 @@ export const EventProvider = ({ children }) => {
   }, []);
 
   const fetchAdPlans = useCallback(async () => {
+    console.log("Fetching ad plans...");
     setLoadingAdPlans(true);
     try {
       const { data, error } = await supabase
         .from('ad_plans')
         .select('*')
-        .eq('is_active', true)
+        
         .order('price', { ascending: true });
       if (error) {
         console.error("Error fetching ad plans:", error);
         setAdPlans([]);
       } else {
+        console.log("Fetched ad plans:", data);
         setAdPlans(data || []);
       }
     } catch (error) {
@@ -109,6 +112,7 @@ export const EventProvider = ({ children }) => {
       setAdPlans([]);
     } finally {
       setLoadingAdPlans(false);
+      console.log("Loading ad plans finished. State:", false);
     }
   }, []);
 
@@ -178,6 +182,7 @@ export const EventProvider = ({ children }) => {
     fetchCardFieldSettings();
     fetchAllUsers();
     fetchAdPlans();
+    console.log("Calling fetchEventCategories from useEffect");
     fetchEventCategories();
   }, [fetchEvents, fetchCardFieldSettings, fetchAllUsers, fetchAdPlans, fetchEventCategories]);
 
@@ -186,6 +191,12 @@ export const EventProvider = ({ children }) => {
   }, [fetchRegistrations, user]);
 
   const createEvent = async (eventData) => {
+    console.log('=== CREATE EVENT DEBUG ===');
+    console.log('Received eventData:', eventData);
+    console.log('end_date in eventData:', eventData.end_date);
+    console.log('end_time in eventData:', eventData.end_time);
+    console.log('========================');
+    
     const plan = adPlans.find(p => p.id === eventData.ad_plan_id);
     const payload = {
       ...eventData,
@@ -193,6 +204,12 @@ export const EventProvider = ({ children }) => {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
+    
+    console.log('=== FINAL PAYLOAD TO SUPABASE ===');
+    console.log('Payload to insert:', payload);
+    console.log('end_date in payload:', payload.end_date);
+    console.log('end_time in payload:', payload.end_time);
+    console.log('================================');
     
     const { data, error } = await supabase
       .from('events')

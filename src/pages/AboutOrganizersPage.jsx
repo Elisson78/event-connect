@@ -133,7 +133,7 @@ const AboutOrganizersPage = () => {
                     Nossos valores são inovação contínua, foco no cliente e paixão por resultados. Estamos sempre buscando novas maneiras de melhorar nossa plataforma e oferecer o melhor suporte possível aos nossos usuários. Junte-se a nós e faça parte desta história de sucesso!
                 </p>
                 <div className="flex justify-center pt-6">
-                    <img-replace src="https://source.unsplash.com/random/600x400?team,office,startup" alt="Equipe EventiConnect trabalhando" className="rounded-lg shadow-md w-full max-w-lg"/>
+                    <img src="https://source.unsplash.com/random/600x400?team,office,startup" alt="Equipe EventiConnect trabalhando" className="rounded-lg shadow-md w-full max-w-lg"/>
                 </div>
             </div>
           </div>

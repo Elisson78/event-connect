@@ -41,7 +41,7 @@ const GatewayCard = ({ gateway, onSave }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    setLocalGateway({ settings: {}, ...gateway, settings: gateway.settings || {} });
+    setLocalGateway({ ...gateway, settings: gateway.settings || {} });
   }, [gateway]);
 
   const handleFieldChange = (field, value) => {

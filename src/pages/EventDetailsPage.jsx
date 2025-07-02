@@ -174,8 +174,14 @@ const EventDetailsPage = () => {
                       <div>
                         <p className="font-semibold text-gray-900">Data e Hora</p>
                         <p className="text-gray-600">
-                          {new Date(event.date).toLocaleDateString('pt-BR')} às {event.time}
+                          {event.start_date ? new Date(event.start_date + 'T00:00:00Z').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : 'A definir'}
+                          {event.end_date && event.end_date !== event.start_date && ` a ${new Date(event.end_date + 'T00:00:00Z').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}`}
                         </p>
+                        {event.start_time && (
+                          <p className="text-gray-500 text-sm">
+                            Das {event.start_time.substring(0, 5)}{event.end_time && ` às ${event.end_time.substring(0, 5)}`}
+                          </p>
+                        )}
                       </div>
                     </div>
                     

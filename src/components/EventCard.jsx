@@ -102,11 +102,7 @@ const EventCard = ({ event, showActions = true }) => {
             </h3>
           )}
           
-          {isFieldVisible('description') && (
-            <p className="text-gray-600 mb-4 line-clamp-2">
-              {event.description}
-            </p>
-          )}
+       
           
           <div className="space-y-2 text-sm text-gray-600">
             {isFieldVisible('date_time') && (
@@ -121,12 +117,7 @@ const EventCard = ({ event, showActions = true }) => {
                 <span>{event.location}</span>
               </div>
             )}
-            {isFieldVisible('registrations') && (
-              <div className="flex items-center space-x-2">
-                <Users className="h-4 w-4 text-blue-600" />
-                <span>{(event.current_participants || 0)}/{event.max_participants} inscritos</span>
-              </div>
-            )}
+          
           </div>
           
           {event.details && event.category?.details_schema && (
@@ -142,11 +133,7 @@ const EventCard = ({ event, showActions = true }) => {
            </div>
           )}
 
-          {isFieldVisible('price') && event.price && (
-            <div className="mt-4 text-2xl font-bold text-orange-600">
-              {event.price}
-            </div>
-          )}
+        
         </CardContent>
         
         {showActions && (

@@ -25,9 +25,9 @@ const CertificateGenerator = () => {
       setLoadingEvents(true);
       const { data, error } = await supabase
         .from('events')
-        .select('id, name, date')
+        .select('id, name, start_date')
         .eq('organizer_id', user.id)
-        .order('date', { ascending: false });
+        .order('start_date', { ascending: false });
 
       if (error) {
         console.error('Error fetching organizer events', error);
@@ -100,7 +100,7 @@ const CertificateGenerator = () => {
             </SelectTrigger>
             <SelectContent>
               {organizerEvents.map(event => (
-                <SelectItem key={event.id} value={event.id}>{event.name} - {new Date(event.date).toLocaleDateString('pt-BR')}</SelectItem>
+                <SelectItem key={event.id} value={event.id}>{event.name} - {new Date(event.start_date).toLocaleDateString('pt-BR')}</SelectItem>
               ))}
             </SelectContent>
           </Select>

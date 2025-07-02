@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -52,7 +51,7 @@ const OrganizerProfilePage = () => {
           .select('*')
           .eq('organizer_id', organizerId)
           .eq('status', 'available')
-          .order('date', { ascending: true });
+          .order('start_date', { ascending: true });
 
         if (eventsError) {
           console.error('Error fetching events:', eventsError);
@@ -111,8 +110,7 @@ const OrganizerProfilePage = () => {
           <img  
             src={bannerImageUrl}
             alt={`Banner de ${organizer.name}`}
-            className="absolute inset-0 w-full h-full object-cover opacity-40"
-           src="https://images.unsplash.com/photo-1506951655837-9b668f81447a" />
+            className="absolute inset-0 w-full h-full object-cover opacity-40" />
           <div className="absolute inset-0 bg-black/30"></div>
         </div>
 
