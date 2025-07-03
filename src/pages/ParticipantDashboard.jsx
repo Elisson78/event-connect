@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { useProfile } from '@/contexts/ProfileContext';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
+import ParticipantPrizes from '@/components/participant/ParticipantPrizes';
 
 const ParticipantDashboard = () => {
   const { profile, loading: profileLoading } = useProfile();
@@ -60,6 +61,7 @@ const ParticipantDashboard = () => {
                 {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </Button>
             </div>
+            {location.pathname.endsWith('/participant/dashboard') && <ParticipantPrizes />}
             <Outlet /> 
           </motion.div>
         </main>

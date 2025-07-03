@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, CalendarCheck, UserCircle, LogOut } from 'lucide-react';
+import { Home, CalendarCheck, UserCircle, LogOut, Trophy, Award } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/contexts/ProfileContext';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,8 @@ const ParticipantSidebar = ({ isOpen, onClose }) => {
   const navItems = [
     { name: 'Visão Geral', path: '/participant/dashboard', icon: Home },
     { name: 'Meus Eventos', path: 'my-events', icon: CalendarCheck },
+    { name: 'Sorteio', path: 'prizes', icon: Trophy },
+    { name: 'Documentos', path: 'documents', icon: Award },
     { name: 'Meu Perfil', path: 'profile', icon: UserCircle },
   ];
 

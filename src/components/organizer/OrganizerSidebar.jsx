@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Calendar, Users, Building, DollarSign, HeartHandshake as Handshake, ShoppingBag, Settings } from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, Building, DollarSign, HeartHandshake as Handshake, ShoppingBag, Settings, Gift } from 'lucide-react';
 import { useProfile } from '@/contexts/ProfileContext';
 
 const OrganizerSidebar = ({ isOpen, onClose }) => {
@@ -16,6 +16,7 @@ const OrganizerSidebar = ({ isOpen, onClose }) => {
         { href: '/organizer/dashboard/finances', label: 'Financeiro', icon: DollarSign },
         { href: '/organizer/dashboard/collaborators', label: 'Colaboradores', icon: Handshake },
         { href: '/organizer/dashboard/marketplace', label: 'Mercado', icon: ShoppingBag },
+        { href: '/organizer/dashboard/giveaways', label: 'Sorteios', icon: Gift },
     ];
 
     const NavLink = ({ item }) => (

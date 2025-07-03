@@ -78,6 +78,7 @@ const OrganizerRegistrations = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEventId, setFilterEventId] = useState('');
   const { toast } = useToast();
+  const [approvingId, setApprovingId] = useState(null);
 
   const fetchOrganizerRegistrations = useCallback(async () => {
     if (!user?.id || !events.length) {
@@ -163,10 +164,23 @@ const OrganizerRegistrations = () => {
 
   // Funções para aprovar/rejeitar inscrição
   const handleApprove = async (registrationId) => {
-    // Aqui você pode chamar a API para aprovar a inscrição
-    toast({ title: 'Inscrição liberada', description: 'O participante foi aprovado.', variant: 'success' });
-    // Atualize a lista após aprovação (mock)
-    setRegistrationsWithDetails(prev => prev.map(r => r.id === registrationId ? { ...r, status: 'confirmed' } : r));
+    setApprovingId(registrationId);
+    try {
+      const { error } = await supabase
+        .from('registrations')
+        .update({ status: 'confirmed' })
+        .eq('id', registrationId);
+      if (error) {
+        console.error('Erro Supabase:', error);
+        throw error;
+      }
+      await fetchOrganizerRegistrations();
+      toast({ title: 'Inscrição liberada', description: 'O participante foi aprovado.', variant: 'success', className: 'bg-green-600 text-white font-bold' });
+    } catch (error) {
+      toast({ title: 'Erro ao liberar', description: error.message, variant: 'destructive', className: 'bg-red-600 text-white font-bold' });
+    } finally {
+      setApprovingId(null);
+    }
   };
   const handleReject = async (registrationId) => {
     // Aqui você pode chamar a API para rejeitar a inscrição
@@ -327,7 +341,12 @@ const OrganizerRegistrations = () => {
                           <td className="px-4 py-2 whitespace-nowrap flex flex-wrap gap-2">
                             {isPending && (
                               <>
-                                <Button size="sm" variant="success" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleApprove(reg.id)}>Liberar</Button>
+                                <Button size="sm" variant="success" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleApprove(reg.id)} disabled={approvingId === reg.id}>
+                                  {approvingId === reg.id ? (
+                                    <span className="animate-spin mr-2 h-4 w-4 border-b-2 border-white inline-block align-middle"></span>
+                                  ) : null}
+                                  Liberar
+                                </Button>
                                 <Button size="sm" variant="destructive" onClick={() => handleReject(reg.id)}>Rejeitar</Button>
                               </>
                             )}

@@ -1,37 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import RevenueCalculator from '@/components/pricing/RevenueCalculator';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, PlusCircle, Star } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
-
-const planIcons = {
-  Gratuito: <TrendingUp className="h-8 w-8 text-gray-500" />, // fallback
-  Plus: <PlusCircle className="h-8 w-8 text-yellow-500" />,
-  Pro: <Star className="h-8 w-8 text-violet-500" />,
-};
-
-const getPlanIcon = (name) => {
-  if (name.toLowerCase().includes('plus')) return planIcons.Plus;
-  if (name.toLowerCase().includes('pro')) return planIcons.Pro;
-  if (name.toLowerCase().includes('gratuito') || name.toLowerCase().includes('free')) return planIcons.Gratuito;
-  return planIcons.Gratuito;
-};
 
 const PricingPage = () => {
-  const [plans, setPlans] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [filtered, setFiltered] = useState([]);
 
   useEffect(() => {
-    const fetchPlans = async () => {
-      setLoading(true);
-      const { data, error } = await supabase.from('plans').select('*').order('created_at');
-      if (!error) setPlans(data.filter(p => p.is_active));
-      setLoading(false);
-    };
-    fetchPlans();
-  }, []);
+    const timeout = setTimeout(() => {
+      setFiltered(
+        inscritos.filter(i =>
+          i.nome.toLowerCase().includes(search.toLowerCase()) ||
+          i.registration_code?.toLowerCase().includes(search.toLowerCase())
+        )
+      );
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeout);
+  }, [search, inscritos]);
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -71,32 +60,45 @@ const PricingPage = () => {
               Transparência é fundamental. Aqui estão as taxas para cada um dos nossos pacotes.
             </p>
             <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              {loading ? (
-                <div className="col-span-3 text-center text-gray-500 py-12">Carregando planos...</div>
-              ) : plans.length === 0 ? (
-                <div className="col-span-3 text-center text-gray-500 py-12">Nenhum plano disponível no momento.</div>
-              ) : (
-                plans.map((plan, idx) => (
-                  <Card
-                    key={plan.id}
-                    className={`text-left shadow-lg hover:shadow-xl transition-shadow duration-300 ${plan.name.toLowerCase().includes('plus') ? 'border-2 border-yellow-400' : ''}`}
-                  >
-                    <CardHeader>
-                      <div className="flex items-center gap-3">
-                        {getPlanIcon(plan.name)}
-                        <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                      </div>
-                      <CardDescription className="text-lg font-semibold text-gray-800 pt-2">
-                        {plan.fee_percent > 0 ? `${parseFloat(plan.fee_percent).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}% + ` : ''}CHF {parseFloat(plan.fee_fixed).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </CardDescription>
-                      <CardDescription>por ingresso vendido</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600">{plan.description}</p>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
+              <Card className="text-left shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <TrendingUp className="h-8 w-8 text-gray-500" />
+                    <CardTitle className="text-2xl">Gratuito</CardTitle>
+                  </div>
+                  <CardDescription className="text-lg font-semibold text-gray-800 pt-2">CHF 0.50</CardDescription>
+                  <CardDescription>por ingresso vendido</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600">Ideal para eventos gratuitos ou para quem está começando. Inclui publicidade de terceiros.</p>
+                </CardContent>
+              </Card>
+              <Card className="text-left shadow-lg hover:shadow-xl transition-shadow duration-300 border-2 border-yellow-400">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <PlusCircle className="h-8 w-8 text-yellow-500" />
+                    <CardTitle className="text-2xl">Plus</CardTitle>
+                  </div>
+                  <CardDescription className="text-lg font-semibold text-gray-800 pt-2">3.9% + CHF 0.49</CardDescription>
+                  <CardDescription>por ingresso vendido</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600">Selecionado automaticamente para ingressos acima de CHF 50. Oferece suporte prioritário.</p>
+                </CardContent>
+              </Card>
+              <Card className="text-left shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <Star className="h-8 w-8 text-violet-500" />
+                    <CardTitle className="text-2xl">Pro</CardTitle>
+                  </div>
+                  <CardDescription className="text-lg font-semibold text-gray-800 pt-2">4.9% + CHF 0.89</CardDescription>
+                  <CardDescription>por ingresso vendido</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600">Para uma experiência premium sem anúncios de terceiros no seu evento.</p>
+                </CardContent>
+              </Card>
             </div>
           </motion.div>
         </div>

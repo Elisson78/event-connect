@@ -25,6 +25,8 @@ import PaymentPage from '@/pages/PaymentPage';
 import ParticipantOverview from '@/components/participant/ParticipantOverview';
 import ParticipantMyEvents from '@/components/participant/ParticipantMyEvents';
 import ParticipantProfile from '@/components/participant/ParticipantProfile';
+import ParticipantPrizes from '@/components/participant/ParticipantPrizes';
+import ParticipantDocuments from '@/components/participant/ParticipantDocuments';
 
 import OrganizerOverview from '@/components/organizer/OrganizerOverview';
 import OrganizerProfile from '@/components/organizer/OrganizerProfile';
@@ -157,6 +159,8 @@ function App() {
                   <Route index element={<ParticipantOverview />} />
                   <Route path="my-events" element={<ParticipantMyEvents />} />
                   <Route path="profile" element={<ParticipantProfile />} />
+                  <Route path="prizes" element={<ParticipantPrizes />} />
+                  <Route path="documents" element={<ParticipantDocuments />} />
                 </Route>
                 
                 <Route 

@@ -52,10 +52,8 @@ const ParticipantMyEvents = () => {
     .filter(reg => new Date(reg.event.date) < new Date())
     .sort((a, b) => new Date(b.event.date) - new Date(a.event.date));
 
-  // Filtra inscrições aguardando liberação
-  const pendingApprovalRegistrations = myRegistrations.filter(reg => reg.status === 'pending_approval');
-  // Filtra próximos eventos (excluindo os aguardando liberação)
-  const upcomingRegistrationsFiltered = upcomingRegistrations.filter(reg => reg.status !== 'pending_approval');
+  // Filtra apenas inscrições confirmadas (pagas/liberadas)
+  const confirmedRegistrations = myRegistrations.filter(reg => reg.status === 'confirmed');
 
   const handleOpenUploadDialog = (registration) => {
     setSelectedRegistration(registration);
@@ -109,6 +107,9 @@ const ParticipantMyEvents = () => {
     const status = statusConfig[registration.status] || { text: registration.status, color: 'gray', icon: AlertTriangle };
     const StatusIcon = status.icon;
 
+    // Debug: ver o que vem do backend
+    console.log('registration:', registration);
+
     // Botões de ação por status
     const renderActions = () => {
       switch (registration.status) {
@@ -136,7 +137,13 @@ const ParticipantMyEvents = () => {
       >
         <div className="p-6 flex-grow">
           <div className="flex justify-between items-start mb-3">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2 pr-2 flex-1">{event.name}</h3>
+            <div className="pr-2 flex-1">
+              <h3 className="text-lg font-semibold text-gray-800 mb-1">{event.name}</h3>
+              <div className="text-xs text-blue-700 font-mono mb-1 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-blue-500" />
+                Código de Inscrição: <span className="font-bold">{registration.registration_code || 'N/A'}</span>
+              </div>
+            </div>
             <Badge variant={status.color} className="flex-shrink-0">
               <StatusIcon className="h-3 w-3 mr-1.5" />
               {status.text}
@@ -174,25 +181,15 @@ const ParticipantMyEvents = () => {
           <CardDescription>Acompanhe o status de todas as suas inscrições em eventos.</CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Seção aguardando liberação */}
-          {pendingApprovalRegistrations.length > 0 && (
-            <>
-              <h3 className="text-xl font-semibold text-yellow-700 mb-4 flex items-center gap-2"><Hourglass className="h-5 w-5 text-yellow-500" />Aguardando Liberação</h3>
-              <div className="grid md:grid-cols-2 gap-6 mb-8">
-                {pendingApprovalRegistrations.map(reg => <RegistrationCardItem key={reg.id} registration={reg} />)}
-              </div>
-            </>
-          )}
-
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Próximos Eventos</h3>
-          {upcomingRegistrationsFiltered.length === 0 ? (
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">Eventos Pagos/Liberados</h3>
+          {confirmedRegistrations.length === 0 ? (
             <div className="text-center py-10 border-2 border-dashed rounded-lg">
-              <p className="text-gray-500 mb-4">Você não tem inscrições para eventos futuros.</p>
+              <p className="text-gray-500 mb-4">Você não tem inscrições pagas/liberadas.</p>
               <Link to="/events"><Button>Explorar Eventos</Button></Link>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 gap-6">
-              {upcomingRegistrationsFiltered.map(reg => <RegistrationCardItem key={reg.id} registration={reg} />)}
+              {confirmedRegistrations.map(reg => <RegistrationCardItem key={reg.id} registration={reg} />)}
             </div>
           )}
 

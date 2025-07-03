@@ -21,6 +21,7 @@ const OrganizerDashboard = () => {
     if (path.endsWith('/settings')) return 'Configurações';
     if (path.endsWith('/marketplace')) return 'Mercado de Publicidade';
     if (path.endsWith('/finances')) return 'Minhas Finanças';
+    if (path.endsWith('/giveaways')) return 'Sistema de Sorteios';
     return 'Visão Geral do Organizador';
   };
 
