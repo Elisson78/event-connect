@@ -6,21 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { TrendingUp, PlusCircle, Star } from 'lucide-react';
 
 const PricingPage = () => {
-  const [search, setSearch] = useState('');
-  const [filtered, setFiltered] = useState([]);
-
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      setFiltered(
-        inscritos.filter(i =>
-          i.nome.toLowerCase().includes(search.toLowerCase()) ||
-          i.registration_code?.toLowerCase().includes(search.toLowerCase())
-        )
-      );
-    }, 300); // 300ms debounce
-
-    return () => clearTimeout(timeout);
-  }, [search, inscritos]);
+    document.title = 'Planos e Preços - Event Connect';
+  }, []);
 
   return (
     <div className="bg-gray-50 min-h-screen">
