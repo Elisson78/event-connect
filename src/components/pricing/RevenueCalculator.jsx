@@ -134,7 +134,7 @@ const RevenueCalculator = () => {
                     </li>
                     <li className="flex items-center space-x-3">
                       <span className="text-gray-700">Receita líquida: <b>{formatCurrency(results.netRevenue)}</b></span>
-                    </li>
+                      </li>
                   </ul>
                 </div>
               </CardContent>

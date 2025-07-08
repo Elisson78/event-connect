@@ -19,7 +19,24 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-const AdminCardSettings = ({ settings: initialSettings, onSave, loading }) => {
+// Lista de todos os campos padrão possíveis para o card
+const ALL_DEFAULT_FIELDS = [
+  { field_name: 'name', label: 'Título', is_custom: false },
+  { field_name: 'description', label: 'Descrição', is_custom: false },
+  { field_name: 'start_date', label: 'Data de Início', is_custom: false },
+  { field_name: 'end_date', label: 'Data de Término', is_custom: false },
+  { field_name: 'start_time', label: 'Horário de Início', is_custom: false },
+  { field_name: 'end_time', label: 'Horário de Término', is_custom: false },
+  { field_name: 'location', label: 'Local', is_custom: false },
+  { field_name: 'category', label: 'Categoria', is_custom: false },
+  { field_name: 'price', label: 'Preço', is_custom: false },
+  { field_name: 'current_participants', label: 'Participantes Inscritos', is_custom: false },
+  { field_name: 'max_participants', label: 'Máximo de Participantes', is_custom: false },
+  { field_name: 'status', label: 'Status', is_custom: false },
+  { field_name: 'card_image_url', label: 'Imagem do Card', is_custom: false },
+];
+
+const AdminCardSettings = ({ settings: initialSettings, onSave, loading, eventCategories = [] }) => {
   const [fields, setFields] = useState([]);
   const [newFieldName, setNewFieldName] = useState('');
   const [newFieldLabel, setNewFieldLabel] = useState('');
@@ -27,11 +44,51 @@ const AdminCardSettings = ({ settings: initialSettings, onSave, loading }) => {
   const [editingLabel, setEditingLabel] = useState('');
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (initialSettings && initialSettings.length > 0) {
-      setFields(initialSettings.sort((a, b) => a.is_custom - b.is_custom || a.id - b.id));
+  // Extrai todos os campos personalizados de todas as categorias
+  const detailsFields = React.useMemo(() => {
+    const allFields = [];
+    eventCategories.forEach(cat => {
+      if (cat.details_schema && Array.isArray(cat.details_schema)) {
+        cat.details_schema.forEach(field => {
+          const fieldName = field?.name || field?.key;
+          if (fieldName && field.label) {
+            allFields.push({
+              field_name: fieldName,
+              label: field.label,
+              is_custom: true
+            });
+          }
+        });
+      }
+    });
+    // Remove duplicados pelo field_name
+    const unique = [];
+    const seen = new Set();
+    for (const f of allFields) {
+      if (!seen.has(f.field_name)) {
+        unique.push(f);
+        seen.add(f.field_name);
+      }
     }
-  }, [initialSettings]);
+    return unique;
+  }, [eventCategories]);
+
+  useEffect(() => {
+    let mergedFields = initialSettings && initialSettings.length > 0 ? [...initialSettings] : [];
+    // Garante todos os campos padrão
+    ALL_DEFAULT_FIELDS.forEach(def => {
+      if (!mergedFields.some(f => f.field_name === def.field_name)) {
+        mergedFields.push({ ...def, is_visible: true });
+      }
+    });
+    // Garante todos os campos personalizados vindos do details_schema
+    detailsFields.forEach(def => {
+      if (!mergedFields.some(f => f.field_name === def.field_name)) {
+        mergedFields.push({ ...def, is_visible: true });
+      }
+    });
+    setFields(mergedFields.sort((a, b) => a.is_custom - b.is_custom || a.id - b.id));
+  }, [initialSettings, detailsFields]);
 
   const handleVisibilityChange = (fieldName, isVisible) => {
     setFields(fields.map(f => f.field_name === fieldName ? { ...f, is_visible: isVisible } : f));

@@ -19,9 +19,9 @@ const ProfileForm = ({ formData, handleInputChange, isEditing, loadingSubmit, ha
         <div className="flex flex-col items-center sm:flex-row sm:items-start">
           <label htmlFor="profile-logo-upload" className="cursor-pointer group relative">
             <Avatar className="h-32 w-32 border-4 border-slate-500 shadow-lg bg-slate-600 group-hover:opacity-80 transition-opacity">
-              <AvatarImage src={formData.logo_url || formData.profile_image_url || undefined} alt={formData.company_name || formData.name} />
-              <AvatarFallback className="text-4xl">{getInitials(formData.company_name || formData.name)}</AvatarFallback>
-            </Avatar>
+            <AvatarImage src={formData.logo_url || formData.profile_image_url || undefined} alt={formData.company_name || formData.name} />
+            <AvatarFallback className="text-4xl">{getInitials(formData.company_name || formData.name)}</AvatarFallback>
+          </Avatar>
             <input
               id="profile-logo-upload"
               type="file"
@@ -72,6 +72,19 @@ const ProfileForm = ({ formData, handleInputChange, isEditing, loadingSubmit, ha
           <div className="space-y-1 md:col-span-2">
             <Label htmlFor="bio" className="font-semibold text-gray-700 flex items-center"><User className="h-4 w-4 mr-2 text-orange-500" /> Sobre a Empresa / Organizador (Bio)</Label>
             <Textarea id="bio" value={formData.bio} onChange={(e) => handleInputChange('bio', e.target.value)} placeholder="Descreva sua empresa, sua missão, etc." disabled={!isEditing || loadingSubmit} rows={4} />
+          </div>
+          <div className="space-y-1 md:col-span-2 flex items-center mt-2">
+            <input
+              type="checkbox"
+              id="is_nonprofit"
+              checked={!!formData.is_nonprofit}
+              onChange={e => handleInputChange('is_nonprofit', e.target.checked)}
+              disabled={!isEditing || loadingSubmit}
+              className="h-5 w-5 mr-2 accent-orange-500"
+            />
+            <Label htmlFor="is_nonprofit" className="font-semibold text-gray-700 flex items-center">
+              <span className="ml-1">Instituição sem fins lucrativos</span>
+            </Label>
           </div>
         </div>
       </CardContent>

@@ -214,9 +214,18 @@ const EventDetailsPage = () => {
 
                   <div className="mb-8">
                     <h2 className="text-2xl font-bold text-gray-900 mb-4">Sobre o Evento</h2>
-                    <p className="text-gray-700 leading-relaxed text-lg">
-                      {event.description}
-                    </p>
+                    {((event.price === 0 || event.is_free) && (
+                      <div className="mb-4">
+                        <span className="inline-block bg-green-100 text-green-800 text-sm font-semibold px-4 py-2 rounded-full shadow-sm">
+                          Evento Gratuito
+                        </span>
+                      </div>
+                    ))}
+                    <div className="bg-white p-0 rounded-none shadow-none w-full">
+                      <p className="text-gray-700 leading-relaxed text-lg whitespace-pre-line text-justify">
+                        {event.description}
+                      </p>
+                    </div>
                   </div>
 
                   {event.details && event.category?.details_schema && Object.keys(event.details).length > 0 && (

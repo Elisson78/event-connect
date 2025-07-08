@@ -108,7 +108,7 @@ const EventCard = ({ event, showActions = true }) => {
             {isFieldVisible('date_time') && (
               <div className="flex items-center space-x-2">
                 <Calendar className="h-4 w-4 text-blue-600" />
-                <span>{new Date(event.date).toLocaleDateString('pt-BR')} às {event.time}</span>
+                <span>{event.start_date ? new Date(event.start_date).toLocaleDateString('pt-BR') : 'Data não definida'}{event.start_time && ` às ${event.start_time}`}</span>
               </div>
             )}
             {isFieldVisible('location') && (
@@ -122,14 +122,25 @@ const EventCard = ({ event, showActions = true }) => {
           
           {event.details && event.category?.details_schema && (
              <div className="space-y-1 text-sm text-gray-600 mt-3 pt-3 border-t border-dashed">
-             {event.category.details_schema.slice(0, 1).map(field => 
-               event.details[field.key] && (
-                 <div key={field.key} className="flex items-start space-x-2">
-                   <Info className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                   <p><strong className="font-medium text-gray-800">{field.label}:</strong> <span className="line-clamp-1">{event.details[field.key]}</span></p>
-                 </div>
-               )
-             )}
+             {event.category.details_schema
+               .filter(field => {
+                 const fieldName = field?.name || field?.key;
+                 if (!fieldName) return false;
+                 // Só exibe se estiver ativado no painel admin
+                 if (loadingCardSettings) return true;
+                 const setting = cardFieldSettings[fieldName];
+                 return setting ? setting.is_visible : true;
+               })
+               .slice(0, 1)
+               .map(field => {
+                 const fieldName = field?.name || field?.key;
+                 return event.details[fieldName] && (
+                   <div key={fieldName} className="flex items-start space-x-2">
+                     <Info className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                     <p><strong className="font-medium text-gray-800">{field.label}:</strong> <span className="line-clamp-1">{event.details[fieldName]}</span></p>
+                   </div>
+                 );
+               })}
            </div>
           )}
 

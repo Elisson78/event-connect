@@ -66,6 +66,32 @@ const ParticipantDetailsModal = ({ participant, eventName, isOpen, onClose }) =>
   );
 };
 
+// Modal para exibir o comprovante de pagamento
+const ReceiptModal = ({ url, isOpen, onClose }) => {
+  if (!url) return null;
+  const isImage = url.match(/\.(jpeg|jpg|png|gif|webp)$/i);
+  const isPdf = url.match(/\.pdf$/i);
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Comprovante de Pagamento</DialogTitle>
+        </DialogHeader>
+        <div className="py-4 flex flex-col items-center gap-4">
+          {isImage && <img src={url} alt="Recibo enviado" className="max-h-96 rounded shadow" />}
+          {isPdf && (
+            <iframe src={url} title="Recibo PDF" className="w-full h-96 rounded shadow" />
+          )}
+          {!isImage && !isPdf && (
+            <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Abrir comprovante</a>
+          )}
+          <a href={url} download className="btn btn-outline mt-2">Baixar Recibo</a>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const OrganizerRegistrations = () => {
   const { user } = useAuth();
   const { events, loadingEvents, refetchEvents } = useEvents();
@@ -79,6 +105,13 @@ const OrganizerRegistrations = () => {
   const [filterEventId, setFilterEventId] = useState('');
   const { toast } = useToast();
   const [approvingId, setApprovingId] = useState(null);
+  const [receiptUrl, setReceiptUrl] = useState(null);
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [proofs, setProofs] = useState([]);
+  const [selectedRegistrationId, setSelectedRegistrationId] = useState(null);
+  const [proofFiles, setProofFiles] = useState([]);
+  const [isProofsModalOpen, setIsProofsModalOpen] = useState(false);
+  const [selectedProofs, setSelectedProofs] = useState([]);
 
   const fetchOrganizerRegistrations = useCallback(async () => {
     if (!user?.id || !events.length) {
@@ -136,6 +169,17 @@ const OrganizerRegistrations = () => {
     }
   }, [loadingEvents, fetchOrganizerRegistrations]);
 
+  // Carregar todos os arquivos de comprovante ao montar o componente
+  useEffect(() => {
+    const fetchAllProofFiles = async () => {
+      const { data, error } = await supabase.storage.from('user_files').list('proofs', { limit: 100 });
+      if (!error && data) {
+        setProofFiles(data);
+      }
+    };
+    fetchAllProofFiles();
+  }, []);
+
   const handleViewDetails = (participant, eventName) => {
     setSelectedParticipant(participant);
     setSelectedEventName(eventName);
@@ -192,7 +236,22 @@ const OrganizerRegistrations = () => {
     toast({ title: 'Mensagem', description: `Abrir chat/mensagem para ${participant.name} (em breve)` });
   };
   const handleViewProof = (registration) => {
-    toast({ title: 'Comprovante', description: 'Visualização de comprovante em breve.' });
+    setReceiptUrl(registration.payment_proof_url || registration.receipt_url);
+    setIsReceiptModalOpen(true);
+  };
+  const fetchProofs = async (registrationId) => {
+    const { data, error } = await supabase
+      .from('payment_proofs')
+      .select('*')
+      .eq('registration_id', registrationId)
+      .order('created_at', { ascending: false });
+    if (!error) setProofs(data);
+  };
+  const handleViewProofs = (registrationId) => {
+    setSelectedRegistrationId(registrationId);
+    const filtered = proofFiles.filter(file => file.name.includes(registrationId));
+    setSelectedProofs(filtered);
+    setIsProofsModalOpen(true);
   };
   // Exportar lista de inscritos (CSV)
   const handleExportCSV = () => {
@@ -251,7 +310,7 @@ const OrganizerRegistrations = () => {
             </div>
             <Button onClick={handleExportCSV} variant="outline" className="flex items-center gap-2">
               <Download className="h-4 w-4" /> Baixar lista (CSV)
-            </Button>
+                </Button>
           </div>
           <div className="mt-4 flex flex-col md:flex-row gap-4">
             <div className="relative flex-grow">
@@ -305,39 +364,39 @@ const OrganizerRegistrations = () => {
                       const status = (reg.status || '').toLowerCase();
                       const isPending = status === 'pending_approval' || status === 'pending payment' || status === 'pending_payment' || status === 'pending';
                       return (
-                        <motion.tr 
-                          key={reg.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <Avatar className="h-10 w-10 mr-3">
-                                <AvatarImage src={reg.participant?.avatar_url || reg.participant?.profile_image_url} alt={reg.participant?.name} />
-                                <AvatarFallback>{reg.participant?.name?.substring(0,1) || 'P'}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">{reg.participant?.name}</div>
-                                <div className="text-xs text-gray-500">{reg.participant?.email}</div>
-                              </div>
+                      <motion.tr 
+                        key={reg.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <Avatar className="h-10 w-10 mr-3">
+                              <AvatarImage src={reg.participant?.avatar_url || reg.participant?.profile_image_url} alt={reg.participant?.name} />
+                              <AvatarFallback>{reg.participant?.name?.substring(0,1) || 'P'}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{reg.participant?.name}</div>
+                              <div className="text-xs text-gray-500">{reg.participant?.email}</div>
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{reg.event?.name}</div>
-                          </td>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{reg.event?.name}</div>
+                        </td>
                           <td className="px-6 py-4 whitespace-nowrap capitalize">{reg.status.replace('_', ' ')}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
-                            {reg.payment_proof_url ? (
-                              <Button size="sm" variant="outline" onClick={() => window.open(reg.payment_proof_url, '_blank')} title="Visualizar Recibo">
+                            {proofFiles.some(file => file.name.includes(reg.id)) ? (
+                              <Button size="sm" variant="outline" onClick={() => handleViewProofs(reg.id)} title="Visualizar Recibo">
                                 <Eye className="h-4 w-4" />
                               </Button>
                             ) : (
                               <span className="text-gray-400 text-xs">—</span>
                             )}
-                          </td>
+                        </td>
                           <td className="px-4 py-2 whitespace-nowrap flex flex-wrap gap-2">
                             {isPending && (
                               <>
@@ -346,13 +405,13 @@ const OrganizerRegistrations = () => {
                                     <span className="animate-spin mr-2 h-4 w-4 border-b-2 border-white inline-block align-middle"></span>
                                   ) : null}
                                   Liberar
-                                </Button>
+                          </Button>
                                 <Button size="sm" variant="destructive" onClick={() => handleReject(reg.id)}>Rejeitar</Button>
                               </>
                             )}
                             <Button size="sm" variant="outline" onClick={() => handleViewDetails(reg.participant, reg.event.name)}>Ver detalhes</Button>
-                          </td>
-                        </motion.tr>
+                        </td>
+                      </motion.tr>
                       );
                     })}
                   </AnimatePresence>
@@ -368,6 +427,69 @@ const OrganizerRegistrations = () => {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
       />
+      <Dialog open={isReceiptModalOpen} onOpenChange={setIsReceiptModalOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Comprovantes Enviados</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 flex flex-col gap-4">
+            {proofs.length === 0 && <span className="text-gray-500">Nenhum comprovante enviado.</span>}
+            {proofs.map(proof => {
+              const isImage = proof.receipt_url.match(/\.(jpeg|jpg|png|gif|webp)$/i);
+              const isPdf = proof.receipt_url.match(/\.pdf$/i);
+              return (
+                <div key={proof.id} className="border rounded p-3 flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-500">Enviado em: {new Date(proof.created_at).toLocaleString('pt-BR')}</span>
+                    <span className={`text-xs px-2 py-1 rounded ${proof.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : proof.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{proof.status}</span>
+                  </div>
+                  {isImage && <img src={proof.receipt_url} alt="Recibo enviado" className="max-h-60 rounded shadow" />}
+                  {isPdf && <iframe src={proof.receipt_url} title="Recibo PDF" className="w-full h-60 rounded shadow" />}
+                  {!isImage && !isPdf && (
+                    <a href={proof.receipt_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Abrir comprovante</a>
+                  )}
+                  <a href={proof.receipt_url} download className="btn btn-outline mt-2">Baixar Recibo</a>
+                </div>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isProofsModalOpen} onOpenChange={setIsProofsModalOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Comprovantes Enviados</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 flex flex-col gap-4">
+            {selectedProofs.length === 0 && <span className="text-gray-500">Nenhum comprovante encontrado para esta inscrição.</span>}
+            {selectedProofs.map(file => {
+              const url = supabase.storage.from('user_files').getPublicUrl(`proofs/${file.name}`).data.publicUrl;
+              let dataEnvio = '';
+              const match = file.name.match(/(\d{13,})/);
+              if (match) {
+                const date = new Date(Number(match[1]));
+                dataEnvio = date.toLocaleString('pt-BR');
+              }
+              const isImage = file.name.match(/\.(jpeg|jpg|png|gif|webp)$/i);
+              const isPdf = file.name.match(/\.pdf$/i);
+              return (
+                <div key={file.id || file.name} className="border rounded p-3 flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-500">{file.name}</span>
+                    {dataEnvio && <span className="text-xs text-gray-500">Enviado em: {dataEnvio}</span>}
+                  </div>
+                  {isImage && <img src={url} alt="Recibo enviado" className="max-h-60 rounded shadow" />}
+                  {isPdf && <iframe src={url} title="Recibo PDF" className="w-full h-60 rounded shadow" />}
+                  {!isImage && !isPdf && (
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Abrir comprovante</a>
+                  )}
+                  <a href={url} download className="btn btn-outline mt-2">Baixar Recibo</a>
+                </div>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 };

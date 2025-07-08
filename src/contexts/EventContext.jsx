@@ -266,40 +266,41 @@ export const EventProvider = ({ children }) => {
 
   const uploadPaymentProof = async (registrationId, file) => {
     if (!profile) throw new Error("Usuário não autenticado.");
-    
+    // Buscar a inscrição para pegar event_id
+    const { data: reg, error: regError } = await supabase
+      .from('registrations')
+      .select('event_id')
+      .eq('id', registrationId)
+      .single();
+    if (regError) throw regError;
     const fileExt = file.name.split('.').pop();
     const fileName = `${profile.id}-${registrationId}-${Date.now()}.${fileExt}`;
     const filePath = `receipts/${fileName}`;
-
     const { error: uploadError } = await supabase.storage
         .from('user_files')
         .upload(filePath, file);
-
     if (uploadError) {
         console.error("Storage Error:", uploadError);
         throw new Error("Falha ao enviar o arquivo.");
     }
-
     const { data: urlData } = supabase.storage.from('user_files').getPublicUrl(filePath);
-
-    const { data, error: updateError } = await supabase
-        .from('registrations')
-        .update({
-            receipt_url: urlData.publicUrl,
-            status: 'pending_approval',
-            receipt_uploaded_at: new Date().toISOString()
-        })
-        .eq('id', registrationId)
-        .select()
-        .single();
-
-    if (updateError) {
-        console.error("Update Error:", updateError);
-        throw new Error("Falha ao atualizar a inscrição.");
+    // Cria novo registro na tabela payment_proofs
+    const { error: insertError } = await supabase
+      .from('payment_proofs')
+      .insert({
+        registration_id: registrationId,
+        user_id: profile.id,
+        event_id: reg.event_id,
+        receipt_url: urlData.publicUrl,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      });
+    if (insertError) {
+      console.error("Insert Error:", insertError);
+      throw new Error("Falha ao registrar comprovante.");
     }
-
     await fetchRegistrations();
-    return data;
+    return true;
   };
 
   const getEventRegistrations = (eventId) => {

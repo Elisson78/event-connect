@@ -132,61 +132,7 @@ const AboutOrganizersPage = () => {
                 <p className="text-gray-700 text-lg leading-relaxed">
                     Nossos valores são inovação contínua, foco no cliente e paixão por resultados. Estamos sempre buscando novas maneiras de melhorar nossa plataforma e oferecer o melhor suporte possível aos nossos usuários. Junte-se a nós e faça parte desta história de sucesso!
                 </p>
-                <div className="flex justify-center pt-6">
-                    <img src="https://source.unsplash.com/random/600x400?team,office,startup" alt="Equipe Event Connect trabalhando" className="rounded-lg shadow-md w-full max-w-lg"/>
-                </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="pricing" className="py-16 md:py-24 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Planos e Preços</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Escolha o plano perfeito para suas necessidades e comece a criar eventos incríveis hoje mesmo.
-            </p>
-          </div>
-          <div className="grid lg:grid-cols-3 gap-8 items-stretch">
-            {plans.map((plan, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.15 }}
-                className={`rounded-xl shadow-xl p-8 flex flex-col bg-gradient-to-br ${plan.gradient} text-white ${plan.popular ? 'ring-4 ring-yellow-400 transform lg:scale-105' : ''}`}
-              >
-                {plan.popular && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                    <span className="px-4 py-1 bg-yellow-400 text-gray-800 text-sm font-semibold rounded-full shadow-md">MAIS POPULAR</span>
-                  </div>
-                )}
-                <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                <div className="text-4xl font-extrabold mb-6">
-                  {plan.price}
-                  {plan.priceSuffix && <span className="text-xl font-normal">{plan.priceSuffix}</span>}
-                </div>
-                <ul className="space-y-3 mb-8 flex-grow">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-start">
-                      <CheckCircle className="h-5 w-5 text-green-300 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button 
-                  asChild 
-                  size="lg" 
-                  className={`w-full mt-auto text-lg font-semibold py-3 rounded-lg ${plan.popular ? 'bg-yellow-400 text-gray-800 hover:bg-yellow-500' : 'bg-white/30 hover:bg-white/40 text-white'}`}
-                >
-                  {plan.link.startsWith('mailto:') ? 
-                    <a href={plan.link}>{plan.cta}</a> :
-                    <Link to={plan.link}>{plan.cta}</Link>
-                  }
-                </Button>
-              </motion.div>
-            ))}
           </div>
         </div>
       </section>

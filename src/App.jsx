@@ -27,6 +27,7 @@ import ParticipantMyEvents from '@/components/participant/ParticipantMyEvents';
 import ParticipantProfile from '@/components/participant/ParticipantProfile';
 import ParticipantPrizes from '@/components/participant/ParticipantPrizes';
 import ParticipantDocuments from '@/components/participant/ParticipantDocuments';
+import ParticipantFinances from './components/participant/ParticipantFinances';
 
 import OrganizerOverview from '@/components/organizer/OrganizerOverview';
 import OrganizerProfile from '@/components/organizer/OrganizerProfile';
@@ -36,6 +37,7 @@ import OrganizerGiveaways from '@/components/organizer/OrganizerGiveaways';
 import OrganizerMarketplace from '@/components/organizer/OrganizerMarketplace';
 import OrganizerCollaborators from '@/components/organizer/OrganizerCollaborators';
 import OrganizerFinances from '@/components/organizer/OrganizerFinances';
+import FooterInstallApp from './components/ui/FooterInstallApp';
 
 const PageTitleUpdater = () => {
   const location = useLocation();
@@ -161,6 +163,7 @@ function App() {
                   <Route path="profile" element={<ParticipantProfile />} />
                   <Route path="prizes" element={<ParticipantPrizes />} />
                   <Route path="documents" element={<ParticipantDocuments />} />
+                  <Route path="finances" element={<ParticipantFinances />} />
                 </Route>
                 
                 <Route 
@@ -173,6 +176,7 @@ function App() {
                 />
               </Routes>
               <Toaster />
+              <FooterInstallApp />
             </div>
           </Router>
         </EventProvider>

@@ -21,6 +21,7 @@ const OrganizerProfile = () => {
     name: '', company_name: '', company_id_number: '', company_phone: '',
     company_address: '', email: '', bio: '', website_url: '', logo_url: '',
     profile_image_url: '', banner_image_url: '', document_url: '', document_filename: '',
+    is_nonprofit: false,
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -47,6 +48,7 @@ const OrganizerProfile = () => {
       banner_image_url: currentUser.banner_image_url || '',
       document_url: currentUser.document_url || '',
       document_filename: currentUser.document_filename || '',
+      is_nonprofit: !!currentUser.is_nonprofit,
     });
     setLogoFile(null);
     setProfileImageFile(null);
@@ -161,7 +163,7 @@ const OrganizerProfile = () => {
         updates.avatar_url = updates.profile_image_url || updates.logo_url;
       }
 
-      const textFields = ['name', 'company_name', 'company_id_number', 'company_phone', 'company_address', 'bio', 'website_url'];
+      const textFields = ['name', 'company_name', 'company_id_number', 'company_phone', 'company_address', 'bio', 'website_url', 'is_nonprofit'];
       textFields.forEach(field => {
         if (formData[field] !== user[field]) {
           updates[field] = formData[field];

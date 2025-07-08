@@ -169,6 +169,8 @@ const OrganizerOverview = () => {
 
     setIsSubmitting(true);
     try {
+      // Log para depuração do objeto user
+      console.log('DEBUG USER OBJ:', user);
       // Limpa e converte o valor do preço para um formato numérico que o banco de dados aceita.
       // Remove "R$", outros caracteres não numéricos (exceto vírgula/ponto) e converte vírgula para ponto.
       // Se o campo estiver vazio, define como null.
@@ -185,16 +187,28 @@ const OrganizerOverview = () => {
         return date.toISOString().split('T')[0];
       };
 
+      // Garante que o organizer_id é o da tabela users
+      const organizerId = user.id ?? user.user_id ?? user.user_metadata?.id;
+
+      // Se for instituição sem fins lucrativos, força evento gratuito
+      let priceFinal = priceValue;
+      let isFree = false;
+      if (user.is_nonprofit) {
+        priceFinal = 0;
+        isFree = true;
+      }
+
       const eventPayload = {
         ...formData,
-        organizer_id: user.id,
+        organizer_id: organizerId,
         max_participants: parseInt(formData.max_participants),
         current_participants: isEditing && editingEvent ? editingEvent.current_participants : 0,
         ad_plan_id: formData.ad_plan_id || null,
         start_date: formatDate(formData.start_date), // Formata a data de início
         end_date: formatDate(formData.end_date), // Formata a data de término
         end_time: formData.end_time && formData.end_time.trim() !== '' ? formData.end_time : null, // Garante que horas vazias se tornem null
-        price: priceValue, // Usa o valor do preço limpo
+        price: priceFinal, // Usa o valor do preço limpo ou 0
+        is_free: isFree,
       };
 
       // Debug: Log final payload
@@ -284,15 +298,6 @@ const OrganizerOverview = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
             <div></div>
             <div className="flex space-x-3 mt-4 sm:mt-0">
-              <Button 
-                onClick={createTestEvents} 
-                variant="outline" 
-                className="shadow-md hover:shadow-yellow-400/40 transition-all duration-300"
-                disabled={isSubmitting}
-              >
-                <Zap className="h-5 w-5 mr-2 text-yellow-500" />
-                {isSubmitting ? "Criando Testes..." : "Criar Eventos Teste"}
-              </Button>
               <Dialog open={isCreateDialogOpen} onOpenChange={(isOpen) => { setIsCreateDialogOpen(isOpen); if (!isOpen) resetForm(); }}>
                 <DialogTrigger asChild>
                   <Button className="btn-primary text-white shadow-md hover:shadow-blue-500/40 transition-all duration-300">

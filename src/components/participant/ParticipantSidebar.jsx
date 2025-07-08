@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, Link, useLocation } from 'react-router-dom';
 import { Home, CalendarCheck, UserCircle, LogOut, Trophy, Award } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/contexts/ProfileContext';
@@ -10,6 +10,7 @@ const ParticipantSidebar = ({ isOpen, onClose }) => {
   const { signOut } = useAuth();
   const { profile: user } = useProfile();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = async () => {
     try {
@@ -68,6 +69,11 @@ const ParticipantSidebar = ({ isOpen, onClose }) => {
               <span>{item.name}</span>
             </NavLink>
           ))}
+          <li>
+            <Link to="/participant/dashboard/finances" className={location.pathname.includes('/participant/dashboard/finances') ? 'active' : ''}>
+              <span className="icon">💰</span> Financeiro
+            </Link>
+          </li>
         </nav>
 
         <div className="mt-auto">

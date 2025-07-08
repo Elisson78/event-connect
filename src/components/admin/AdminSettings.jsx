@@ -12,6 +12,7 @@ import { motion } from 'framer-motion';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
+import AdminPwaSettings from '@/components/admin/AdminPwaSettings';
 
 const AdminSettings = () => {
   const { user } = useAuth();
@@ -326,11 +327,12 @@ const AdminSettings = () => {
       </div>
 
       <Tabs defaultValue="geral" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="geral">Geral</TabsTrigger>
           <TabsTrigger value="seo">SEO</TabsTrigger>
           <TabsTrigger value="redes_sociais">Redes Sociais</TabsTrigger>
           <TabsTrigger value="aparencia">Aparência</TabsTrigger>
+          <TabsTrigger value="pwa">PWA</TabsTrigger>
         </TabsList>
 
         {Object.keys(settings).map((category) => (
@@ -370,6 +372,9 @@ const AdminSettings = () => {
             </Card>
           </TabsContent>
         ))}
+        <TabsContent value="pwa">
+          <AdminPwaSettings />
+        </TabsContent>
       </Tabs>
     </motion.div>
   );

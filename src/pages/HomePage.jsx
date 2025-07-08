@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import EventCard from '@/components/EventCard';
 import { useEvents } from '@/contexts/EventContext';
+import { QRCode } from 'react-qrcode-logo';
 
 const HomePage = () => {
   const { events, loadingEvents, networkError } = useEvents();
