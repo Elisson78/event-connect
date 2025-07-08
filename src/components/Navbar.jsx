@@ -129,7 +129,7 @@ const Navbar = () => {
                   {link.icon} {link.text}
                 </Link>
               ))}
-              {platformSettings?.show_pwa_button !== false && (
+              {platformSettings?.show_pwa_button === true && (
                 <div className="mt-3">
                   <InstallPwaButton />
                 </div>

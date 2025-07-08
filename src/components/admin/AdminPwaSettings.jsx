@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { Switch } from '@/components/ui/switch';
 import { useEvents } from '@/contexts/EventContext';
@@ -23,7 +23,14 @@ const AdminPwaSettings = () => {
   const [message, setMessage] = useState(null);
   const [showPwaButton, setShowPwaButton] = useState(true);
   const [showQrcodeHome, setShowQrcodeHome] = useState(true);
-  const { refetchPlatformSettings } = useEvents();
+  const { refetchPlatformSettings, platformSettings } = useEvents();
+
+  useEffect(() => {
+    if (platformSettings) {
+      setShowPwaButton(!!platformSettings.show_pwa_button);
+      setShowQrcodeHome(!!platformSettings.show_qrcode_home);
+    }
+  }, [platformSettings]);
 
   const handleIconChange = (e, size) => {
     const file = e.target.files[0];
