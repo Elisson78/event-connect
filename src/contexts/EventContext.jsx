@@ -29,6 +29,8 @@ export const EventProvider = ({ children }) => {
   const [networkError, setNetworkError] = useState(false);
   const { user } = useAuth();
   const { profile } = useProfile();
+  const [platformSettings, setPlatformSettings] = useState({});
+  const [loadingPlatformSettings, setLoadingPlatformSettings] = useState(true);
 
   const handleNetworkError = (error, context) => {
     console.error(`Network error in ${context}:`, error);
@@ -177,6 +179,18 @@ export const EventProvider = ({ children }) => {
     }
   }, []);
 
+  const fetchPlatformSettings = useCallback(async () => {
+    setLoadingPlatformSettings(true);
+    try {
+      const { data, error } = await supabase.from('platform_settings').select('*').eq('id', 1).single();
+      if (!error && data) {
+        setPlatformSettings(data);
+      }
+    } finally {
+      setLoadingPlatformSettings(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchEvents();
     fetchCardFieldSettings();
@@ -184,7 +198,8 @@ export const EventProvider = ({ children }) => {
     fetchAdPlans();
     console.log("Calling fetchEventCategories from useEffect");
     fetchEventCategories();
-  }, [fetchEvents, fetchCardFieldSettings, fetchAllUsers, fetchAdPlans, fetchEventCategories]);
+    fetchPlatformSettings();
+  }, [fetchEvents, fetchCardFieldSettings, fetchAllUsers, fetchAdPlans, fetchEventCategories, fetchPlatformSettings]);
 
   useEffect(() => {
     fetchRegistrations();
@@ -345,6 +360,8 @@ export const EventProvider = ({ children }) => {
     refetchCardFieldSettings: fetchCardFieldSettings,
     refetchAdPlans: fetchAdPlans,
     refetchEventCategories: fetchEventCategories,
+    platformSettings,
+    refetchPlatformSettings: fetchPlatformSettings,
   };
 
   return (

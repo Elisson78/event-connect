@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { Switch } from '@/components/ui/switch';
+import { useEvents } from '@/contexts/EventContext';
 
 const defaultManifest = {
   name: 'Event Connect',
@@ -19,6 +21,9 @@ const AdminPwaSettings = () => {
   const [preview512, setPreview512] = useState(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
+  const [showPwaButton, setShowPwaButton] = useState(true);
+  const [showQrcodeHome, setShowQrcodeHome] = useState(true);
+  const { refetchPlatformSettings } = useEvents();
 
   const handleIconChange = (e, size) => {
     const file = e.target.files[0];
@@ -44,6 +49,8 @@ const AdminPwaSettings = () => {
     setSaving(true);
     setMessage(null);
     try {
+      // Salvar flags em platform_settings
+      await supabase.from('platform_settings').update({ show_pwa_button: showPwaButton, show_qrcode_home: showQrcodeHome }).eq('id', 1);
       // Upload ícone 192x192
       if (icon192) {
         const { error } = await supabase.storage.from('eventconnect-pwa').upload('icon-192x192.png', icon192, { upsert: true, contentType: 'image/png' });
@@ -75,6 +82,7 @@ const AdminPwaSettings = () => {
       const { error: manifestError } = await supabase.storage.from('eventconnect-pwa').upload('manifest.webmanifest', manifestBlob, { upsert: true, contentType: 'application/json' });
       if (manifestError) throw new Error('Erro ao enviar manifesto: ' + manifestError.message);
       setMessage('Configurações salvas com sucesso!');
+      await refetchPlatformSettings();
     } catch (err) {
       setMessage(err.message);
     } finally {
@@ -86,6 +94,14 @@ const AdminPwaSettings = () => {
     <div className="max-w-xl mx-auto p-6 bg-white rounded shadow">
       <h2 className="text-2xl font-bold mb-4">Configurações do PWA</h2>
       <form className="space-y-4">
+        <div className="flex items-center gap-4">
+          <Switch checked={showPwaButton} onCheckedChange={setShowPwaButton} id="show-pwa-button" />
+          <label htmlFor="show-pwa-button" className="font-semibold">Exibir botão de instalar app no menu</label>
+        </div>
+        <div className="flex items-center gap-4">
+          <Switch checked={showQrcodeHome} onCheckedChange={setShowQrcodeHome} id="show-qrcode-home" />
+          <label htmlFor="show-qrcode-home" className="font-semibold">Exibir QR Code e botões de loja na Home</label>
+        </div>
         <div>
           <label className="block font-semibold mb-1">Ícone 192x192 PNG</label>
           <input type="file" accept="image/png" onChange={e => handleIconChange(e, 192)} />

@@ -7,6 +7,7 @@ import Navbar from '@/components/Navbar';
 import EventCard from '@/components/EventCard';
 import { useEvents } from '@/contexts/EventContext';
 import { QRCode } from 'react-qrcode-logo';
+import InstallPwaButton from '@/components/InstallPwaButton';
 
 const HomePage = () => {
   const { events, loadingEvents, networkError } = useEvents();
@@ -65,6 +66,11 @@ const HomePage = () => {
                   Crie seu Evento Agora!
                 </Button>
               </Link>
+            </div>
+            <div className="mt-8 flex justify-center">
+              <div className="max-w-xs w-full">
+                <InstallPwaButton />
+              </div>
             </div>
           </motion.div>
         </div>

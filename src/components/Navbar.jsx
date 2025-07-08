@@ -3,14 +3,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/contexts/ProfileContext';
-import { Calendar, LogOut, User, Briefcase, Menu, X, PercentCircle } from 'lucide-react';
+import { Calendar, LogOut, User, Briefcase, Menu, X, PercentCircle, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import InstallPwaButton from './InstallPwaButton';
+import { useEvents } from '@/contexts/EventContext';
 
 const Navbar = () => {
   const { signOut } = useAuth();
   const { profile } = useProfile();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { platformSettings } = useEvents();
 
   const handleLogout = async () => {
     await signOut();
@@ -126,6 +129,11 @@ const Navbar = () => {
                   {link.icon} {link.text}
                 </Link>
               ))}
+              {platformSettings?.show_pwa_button !== false && (
+                <div className="mt-3">
+                  <InstallPwaButton />
+                </div>
+              )}
             </div>
             <div className="pt-4 pb-3 border-t border-gray-200">
               {profile ? (
