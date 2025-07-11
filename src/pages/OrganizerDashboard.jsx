@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { useProfile } from '@/contexts/ProfileContext';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import OrganizerPayments from '@/components/organizer/OrganizerPayments';
 
 const OrganizerDashboard = () => {
   const { profile, loading: profileLoading } = useProfile();
@@ -22,6 +23,7 @@ const OrganizerDashboard = () => {
     if (path.endsWith('/marketplace')) return 'Mercado de Publicidade';
     if (path.endsWith('/finances')) return 'Minhas Finanças';
     if (path.endsWith('/giveaways')) return 'Sistema de Sorteios';
+    if (path.endsWith('/organizer/payments')) return 'Métodos de Pagamento';
     return 'Visão Geral do Organizador';
   };
 

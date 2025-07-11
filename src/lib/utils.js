@@ -12,8 +12,8 @@ export function formatPrice(price) {
 	
 	if (numericPrice === 0) return 'Gratuito';
 	
-	return new Intl.NumberFormat('pt-BR', {
+	return new Intl.NumberFormat('de-CH', {
 		style: 'currency',
-		currency: 'BRL',
+		currency: 'CHF',
 	}).format(numericPrice);
 }

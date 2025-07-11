@@ -51,7 +51,7 @@ const PlanForm = ({ plan, onSubmit, onCancel, loading }) => {
         </div>
         <div className="space-y-2">
           <Label htmlFor="fee_fixed">Taxa Fixa (CHF)</Label>
-          <Input id="fee_fixed" type="number" step="0.01" value={formData.fee_fixed} onChange={handleInputChange} required />
+          <Input id="fee_fixed" type="number" step="0.01" value={formData.fee_fixed} onChange={handleInputChange} required placeholder="Ex: 10.00" />
         </div>
       </div>
       <div className="space-y-2">
@@ -77,7 +77,7 @@ const PlanForm = ({ plan, onSubmit, onCancel, loading }) => {
           </div>
           <div className="space-y-2">
             <Label htmlFor="alternate_fee_fixed">Taxa Fixa Alternativa (CHF)</Label>
-            <Input id="alternate_fee_fixed" type="number" step="0.01" value={formData.alternate_fee_fixed} onChange={handleInputChange} />
+            <Input id="alternate_fee_fixed" type="number" step="0.01" value={formData.alternate_fee_fixed} onChange={handleInputChange} placeholder="Ex: 5.00" />
           </div>
         </div>
       </div>

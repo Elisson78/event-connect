@@ -212,10 +212,11 @@ export const EventProvider = ({ children }) => {
     console.log('end_time in eventData:', eventData.end_time);
     console.log('========================');
     
-    const plan = adPlans.find(p => p.id === eventData.ad_plan_id);
+    // Usar ad_plan_id para determinar se é featured (marketing)
+    const marketingPlan = adPlans.find(p => p.id === eventData.ad_plan_id);
     const payload = {
       ...eventData,
-      is_featured: plan ? plan.is_featured_plan : false,
+      is_featured: marketingPlan ? marketingPlan.is_featured_plan : false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -237,10 +238,11 @@ export const EventProvider = ({ children }) => {
   };
 
   const updateEvent = async (eventId, eventData) => {
-    const plan = adPlans.find(p => p.id === eventData.ad_plan_id);
+    // Usar ad_plan_id para determinar se é featured (marketing)
+    const marketingPlan = adPlans.find(p => p.id === eventData.ad_plan_id);
     const payload = {
       ...eventData,
-      is_featured: plan ? plan.is_featured_plan : false,
+      is_featured: marketingPlan ? marketingPlan.is_featured_plan : false,
       updated_at: new Date().toISOString(),
     };
 
@@ -306,7 +308,7 @@ export const EventProvider = ({ children }) => {
         registration_id: registrationId,
         user_id: profile.id,
         event_id: reg.event_id,
-        receipt_url: urlData.publicUrl,
+            receipt_url: urlData.publicUrl,
         status: 'pending',
         created_at: new Date().toISOString()
       });
@@ -332,6 +334,20 @@ export const EventProvider = ({ children }) => {
     return registrations.some(reg => reg.event_id === eventId && reg.user_id === userId);
   };
 
+  // Função para buscar stands de um evento
+  const getEventStands = async (eventId) => {
+    if (!eventId) return [];
+    const { data, error } = await supabase
+      .from('event_stands')
+      .select('*')
+      .eq('event_id', eventId);
+    if (error) {
+      console.error('Erro ao buscar stands:', error);
+      return [];
+    }
+    return data || [];
+  };
+
   const value = {
     events,
     allUsers,
@@ -347,6 +363,7 @@ export const EventProvider = ({ children }) => {
     getEventRegistrations,
     getUserRegistrations,
     isUserRegistered,
+    getEventStands,
     loadingEvents,
     loadingUsers,
     loadingRegistrations,

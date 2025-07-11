@@ -67,6 +67,65 @@ const PaymentPage = () => {
     setIsSubmitting(true);
     try {
       const newRegistration = await createRegistration(event.id, profile.id, 'pending_payment');
+      // Geração da taxa de serviço para o organizador
+      if (newRegistration) {
+        // Buscar evento
+        const { data: eventData } = await supabase
+          .from('events')
+          .select('*')
+          .eq('id', event.id)
+          .single();
+        
+        // Calcular taxa fixa por faixa de preço
+        const price = eventData.price ? parseFloat(eventData.price) : 0;
+        let feeAmount = 0;
+        if (price === 0) {
+          feeAmount = 0;
+        } else if (price > 0 && price <= 50) {
+          feeAmount = 0.50;
+        } else if (price > 50 && price <= 100) {
+          feeAmount = 0.60;
+        } else if (price > 100 && price <= 500) {
+          feeAmount = 0.65;
+        }
+        
+        // Verifica se já existe taxa na tabela organizer_taxa
+        try {
+          const { data: existingFee, error: existingFeeError } = await supabase
+            .from('organizer_taxa')
+          .select('id')
+          .eq('event_id', event.id)
+            .eq('organizer_id', eventData.organizer_id)
+            .eq('registration_id', newRegistration.id)
+          .eq('user_id', profile.id)
+          .single();
+          
+          // Se não encontrou taxa (erro PGRST116 = no rows found) e valor > 0
+          if (existingFeeError && existingFeeError.code === 'PGRST116' && feeAmount > 0) {
+            const { error: feeError } = await supabase.from('organizer_taxa').insert({
+            event_id: event.id,
+            organizer_id: eventData.organizer_id,
+              registration_id: newRegistration.id,
+            user_id: profile.id,
+            fee_amount: Number(feeAmount),
+            status: 'pending',
+            created_at: new Date().toISOString(),
+              description: `Taxa gerada automaticamente para evento pago (faixa: ${price})`
+            });
+            if (feeError) {
+              console.error('Erro ao inserir taxa:', feeError);
+            } else {
+              console.log('Taxa registrada com sucesso:', feeAmount);
+            }
+          } else if (existingFeeError && existingFeeError.code !== 'PGRST116') {
+            console.error('Erro ao verificar taxa existente:', existingFeeError);
+          } else if (existingFee) {
+            console.log('Taxa já existente para este usuário');
+          }
+        } catch (error) {
+          console.error('Erro geral ao processar taxa:', error);
+        }
+      }
       toast({
         title: "Inscrição pré-realizada!",
         description: "Agora, envie o comprovante de pagamento na área 'Meus Eventos' para confirmar sua vaga.",

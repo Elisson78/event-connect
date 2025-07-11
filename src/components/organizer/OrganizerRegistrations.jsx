@@ -11,6 +11,30 @@ import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/components/ui/use-toast';
 
+// Componente ToggleApproveSwitch
+function ToggleApproveSwitch({ checked, onChange, disabled }) {
+  return (
+    <label className="flex items-center cursor-pointer select-none">
+      <div className="relative">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={onChange}
+          disabled={disabled}
+          className="sr-only"
+        />
+        <div className={`block w-14 h-8 rounded-full transition-colors duration-300 ${checked ? 'bg-green-500' : 'bg-red-400'}`}></div>
+        <div
+          className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full shadow transition-transform duration-300 ${checked ? 'translate-x-6' : ''}`}
+        ></div>
+      </div>
+      <span className={`ml-3 text-lg font-bold transition-colors duration-300 ${checked ? 'text-green-700' : 'text-red-700'}`}>
+        {checked ? 'Liberado' : 'Aguardando'}
+      </span>
+    </label>
+  );
+}
+
 const ParticipantDetailsModal = ({ participant, eventName, isOpen, onClose }) => {
   if (!participant) return null;
 
@@ -122,26 +146,50 @@ const OrganizerRegistrations = () => {
     setLoadingRegistrations(true);
     setNetworkError(false);
     try {
-      const organizerEventIds = events.filter(e => e.organizer_id === user.id).map(e => e.id);
+      let organizerEventIds = events.filter(e => e.organizer_id === user.id).map(e => e.id);
+      organizerEventIds = organizerEventIds.filter(id => !!id); // Remove null/undefined
       if (organizerEventIds.length === 0) {
         setRegistrationsWithDetails([]);
         setLoadingRegistrations(false);
         return;
       }
 
+      // Buscar inscrições do organizador
       const { data: regs, error: regsError } = await supabase
         .from('registrations')
-        .select('*, users(*), events(name)')
+        .select('*')
         .in('event_id', organizerEventIds);
-
       if (regsError) throw regsError;
-      
-      const detailedRegs = regs.map(reg => ({
-        ...reg,
-        participant: reg.users,
-        event: reg.events,
-      })).filter(reg => reg.participant && reg.event); 
 
+      // Buscar todos os usuários necessários
+      const userIds = Array.from(new Set(regs.map(r => r.user_id)));
+      let usersMap = {};
+      if (userIds.length > 0) {
+        const { data: usersData, error: usersError } = await supabase
+          .from('users')
+          .select('id, name, email, avatar_url, profile_image_url')
+          .in('id', userIds);
+        if (usersError) throw usersError;
+        usersMap = (usersData || []).reduce((acc, u) => { acc[u.id] = u; return acc; }, {});
+      }
+
+      // Buscar todos os eventos necessários
+      const eventMap = events.reduce((acc, ev) => { acc[ev.id] = ev; return acc; }, {});
+
+      // Montar lista detalhada
+      const detailedRegs = regs.map(reg => {
+        const participant = usersMap[reg.user_id] || {};
+        return {
+          ...reg,
+          participant: {
+            name: participant.name || reg.participant_name || 'Nome não encontrado',
+            email: participant.email || reg.participant_email || 'Email não encontrado',
+            avatar_url: participant.avatar_url,
+            profile_image_url: participant.profile_image_url,
+          },
+          event: eventMap[reg.event_id] || {},
+        };
+      });
       setRegistrationsWithDetails(detailedRegs);
     } catch (error) {
       console.error("Error fetching organizer registrations:", error);
@@ -210,14 +258,92 @@ const OrganizerRegistrations = () => {
   const handleApprove = async (registrationId) => {
     setApprovingId(registrationId);
     try {
-      const { error } = await supabase
+      // 1. Buscar a inscrição
+      const { data: regData, error: regError } = await supabase
+        .from('registrations')
+        .select('*')
+        .eq('id', registrationId)
+        .single();
+      if (regError || !regData) throw regError || new Error('Inscrição não encontrada');
+      if (!regData.user_id) throw new Error('Campo user_id não existe ou está vazio na inscrição.');
+
+      // 2. Atualizar status da inscrição para 'confirmed'
+      const { error: updateError } = await supabase
         .from('registrations')
         .update({ status: 'confirmed' })
         .eq('id', registrationId);
-      if (error) {
-        console.error('Erro Supabase:', error);
-        throw error;
+      if (updateError) throw updateError;
+
+      // 3. Buscar o evento
+      const { data: eventData, error: eventError } = await supabase
+        .from('events')
+        .select('*')
+        .eq('id', regData.event_id)
+        .single();
+      if (eventError || !eventData) throw eventError || new Error('Evento não encontrado');
+
+      // 4. Calcular taxa fixa por faixa de preço
+      const price = eventData.price ? parseFloat(eventData.price) : 0;
+      let feeAmount = 0;
+      if (price === 0) {
+        feeAmount = 0;
+      } else if (price > 0 && price <= 50) {
+        feeAmount = 0.50;
+      } else if (price > 50 && price <= 100) {
+        feeAmount = 0.60;
+      } else if (price > 100 && price <= 500) {
+        feeAmount = 0.65;
       }
+
+      // 5. Inserir taxa de serviço do organizador (nova tabela)
+      if (feeAmount > 0) {
+        try {
+          // Verifica se já existe taxa para este evento, organizador, inscrição e usuário
+        const { data: existingFee, error: existingFeeError } = await supabase
+            .from('organizer_taxa')
+          .select('id')
+          .eq('event_id', eventData.id)
+          .eq('organizer_id', eventData.organizer_id)
+            .eq('registration_id', regData.id)
+          .eq('user_id', regData.user_id)
+          .single();
+          if (existingFeeError && existingFeeError.code === 'PGRST116') {
+            // Não existe taxa, então insere uma nova
+          const { error: feeError } = await supabase
+              .from('organizer_taxa')
+            .insert({
+              event_id: eventData.id,
+              organizer_id: eventData.organizer_id,
+                registration_id: regData.id,
+              user_id: regData.user_id,
+              fee_amount: Number(feeAmount),
+              status: 'pending',
+              created_at: new Date().toISOString(),
+                description: `Taxa gerada automaticamente para evento pago (faixa: ${price})`
+            });
+          if (feeError) {
+              console.error('Erro ao inserir taxa:', feeError);
+            toast({ title: 'Atenção', description: 'Taxa não foi registrada: ' + feeError.message, variant: 'destructive' });
+            } else {
+              console.log('Taxa registrada com sucesso:', feeAmount);
+          }
+          } else if (existingFeeError) {
+            // Erro diferente de "não encontrado"
+            console.error('Erro ao verificar taxa existente:', existingFeeError);
+            toast({ title: 'Erro ao verificar taxa', description: existingFeeError.message, variant: 'destructive' });
+          } else if (existingFee) {
+            // Taxa já existe
+            console.log('Taxa já existente para este participante');
+            toast({ title: 'Taxa já existente', description: 'Já existe uma taxa para este participante neste evento.', variant: 'default' });
+          }
+        } catch (error) {
+          console.error('Erro geral ao processar taxa:', error);
+          toast({ title: 'Erro ao processar taxa', description: error.message, variant: 'destructive' });
+        }
+      } else {
+        console.log('Taxa não gerada - valor zero ou evento gratuito');
+      }
+
       await fetchOrganizerRegistrations();
       toast({ title: 'Inscrição liberada', description: 'O participante foi aprovado.', variant: 'success', className: 'bg-green-600 text-white font-bold' });
     } catch (error) {
@@ -398,17 +524,13 @@ const OrganizerRegistrations = () => {
                             )}
                         </td>
                           <td className="px-4 py-2 whitespace-nowrap flex flex-wrap gap-2">
-                            {isPending && (
-                              <>
-                                <Button size="sm" variant="success" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleApprove(reg.id)} disabled={approvingId === reg.id}>
-                                  {approvingId === reg.id ? (
-                                    <span className="animate-spin mr-2 h-4 w-4 border-b-2 border-white inline-block align-middle"></span>
+                            {isPending || reg.status === 'confirmed' || reg.status === 'approved' ? (
+                              <ToggleApproveSwitch
+                                checked={reg.status === 'confirmed' || reg.status === 'approved'}
+                                onChange={() => handleApprove(reg.id)}
+                                disabled={approvingId === reg.id || reg.status === 'confirmed' || reg.status === 'approved'}
+                              />
                                   ) : null}
-                                  Liberar
-                          </Button>
-                                <Button size="sm" variant="destructive" onClick={() => handleReject(reg.id)}>Rejeitar</Button>
-                              </>
-                            )}
                             <Button size="sm" variant="outline" onClick={() => handleViewDetails(reg.participant, reg.event.name)}>Ver detalhes</Button>
                         </td>
                       </motion.tr>

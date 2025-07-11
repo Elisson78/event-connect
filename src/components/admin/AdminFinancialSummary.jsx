@@ -27,9 +27,9 @@ const AdminFinancialSummary = () => {
   const [loading, setLoading] = useState(true);
 
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('pt-BR', {
+    return new Intl.NumberFormat('de-CH', {
       style: 'currency',
-      currency: 'BRL',
+      currency: 'CHF',
     }).format(value || 0);
   };
 

@@ -4,7 +4,7 @@ import { useProfile } from '@/contexts/ProfileContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Eye, Upload, Loader2, FileText, X, AlertTriangle, CheckCircle, Hourglass, XCircle } from 'lucide-react';
+import { Calendar, MapPin, Eye, Upload, Loader2, FileText, X, AlertTriangle, CheckCircle, Hourglass, XCircle, DoorOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/components/ui/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -12,16 +12,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatPrice } from '@/lib/utils';
+import { supabase } from '@/lib/customSupabaseClient';
 
 const ParticipantMyEvents = () => {
   const { profile } = useProfile();
-  const { events, getUserRegistrations, uploadPaymentProof, loadingEvents, loadingRegistrations } = useEvents();
+  const { events, getUserRegistrations, uploadPaymentProof, loadingEvents, loadingRegistrations, getEventStands, allUsers } = useEvents();
   const { toast } = useToast();
 
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [selectedRegistration, setSelectedRegistration] = useState(null);
   const [file, setFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [standsModalOpen, setStandsModalOpen] = useState(false);
+  const [standsLoading, setStandsLoading] = useState(false);
+  const [stands, setStands] = useState([]);
+  const [standsEventName, setStandsEventName] = useState('');
+  const [payModalOpen, setPayModalOpen] = useState(false);
+  const [payingStand, setPayingStand] = useState(null);
+  const [payFile, setPayFile] = useState(null);
+  const [payLoading, setPayLoading] = useState(false);
 
   const userRegistrations = useMemo(() => {
     if (!profile) return [];
@@ -83,6 +92,126 @@ const ParticipantMyEvents = () => {
       toast({ title: "Erro ao enviar", description: error.message, variant: "destructive" });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Função para abrir modal de stands
+  const handleOpenStands = async (event) => {
+    setStandsModalOpen(true);
+    setStandsLoading(true);
+    setStands([]);
+    setStandsEventName(event.name);
+    try {
+      const data = await getEventStands(event.id);
+      setStands(data);
+    } catch (e) {
+      toast({ title: 'Erro ao buscar stands', description: e.message, variant: 'destructive' });
+    } finally {
+      setStandsLoading(false);
+    }
+  };
+
+  // Função para reservar stand
+  const handleReserveStand = async (stand) => {
+    if (!profile) {
+      toast({ title: 'Faça login para reservar', variant: 'destructive' });
+      return;
+    }
+    try {
+      // Busca o stand atualizado do banco para garantir que ainda está disponível
+      const { data: fresh, error: fetchError } = await supabase
+        .from('event_stands')
+        .select('status, reserved_by')
+        .eq('id', stand.id)
+        .single();
+      if (fetchError) throw fetchError;
+      if (!fresh || fresh.status !== 'disponivel') {
+        toast({ title: 'Stand indisponível', description: 'Este stand já foi reservado por outro participante.', variant: 'destructive' });
+        // Atualiza a lista para refletir o status real
+        if (stand.event_id) {
+          setStandsLoading(true);
+          const data = await getEventStands(stand.event_id);
+          setStands(data);
+          setStandsLoading(false);
+        }
+        return;
+      }
+      // Atualiza o status do stand para 'reservado' e associa ao usuário
+      const { error } = await supabase
+        .from('event_stands')
+        .update({ status: 'reservado', reserved_by: profile.id })
+        .eq('id', stand.id)
+        .eq('status', 'disponivel'); // Garante update só se ainda está disponível
+      if (error) throw error;
+      toast({ title: 'Reserva realizada!', description: `Você reservou o ${stand.name}.`, variant: 'success' });
+      // Atualiza a lista de stands no modal
+      if (stand.event_id) {
+        setStandsLoading(true);
+        const data = await getEventStands(stand.event_id);
+        setStands(data);
+        setStandsLoading(false);
+      }
+    } catch (e) {
+      toast({ title: 'Erro ao reservar stand', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  // Função para cancelar reserva do stand
+  const handleCancelReservation = async (stand) => {
+    try {
+      const { error } = await supabase
+        .from('event_stands')
+        .update({ status: 'disponivel', reserved_by: null })
+        .eq('id', stand.id);
+      if (error) throw error;
+      toast({ title: 'Reserva cancelada!', description: `Você cancelou a reserva do ${stand.name}.`, variant: 'success' });
+      if (stand.event_id) {
+        setStandsLoading(true);
+        const data = await getEventStands(stand.event_id);
+        setStands(data);
+        setStandsLoading(false);
+      }
+    } catch (e) {
+      toast({ title: 'Erro ao cancelar reserva', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  // Função para abrir modal de pagamento
+  const handleOpenPayModal = (stand) => {
+    setPayingStand(stand);
+    setPayFile(null);
+    setPayModalOpen(true);
+  };
+
+  // Função para upload do comprovante
+  const handlePaySubmit = async () => {
+    if (!payFile || !payingStand) return;
+    setPayLoading(true);
+    try {
+      const ext = payFile.name.split('.').pop();
+      const filePath = `stand_payments/${payingStand.id}_${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('user_files').upload(filePath, payFile);
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('user_files').getPublicUrl(filePath);
+      // Atualiza no banco
+      const { error: updateError } = await supabase
+        .from('event_stands')
+        .update({ payment_receipt_url: urlData.publicUrl, payment_status: 'em_analise', payment_date: new Date().toISOString() })
+        .eq('id', payingStand.id);
+      if (updateError) throw updateError;
+      toast({ title: 'Comprovante enviado', description: 'Seu comprovante foi enviado para análise.', variant: 'success' });
+      setPayModalOpen(false);
+      // Atualiza lista de stands
+      if (payingStand.event_id) {
+        setStandsLoading(true);
+        const data = await getEventStands(payingStand.event_id);
+        setStands(data);
+        setStandsLoading(false);
+      }
+    } catch (err) {
+      toast({ title: 'Erro ao enviar comprovante', description: err.message, variant: 'destructive' });
+    } finally {
+      setPayLoading(false);
     }
   };
 
@@ -159,6 +288,7 @@ const ParticipantMyEvents = () => {
           <Link to={`/event/${event.id}`} className="flex-1">
             <Button variant="outline" className="w-full"><Eye className="h-4 w-4 mr-2" /> Ver Detalhes</Button>
           </Link>
+          <Button variant="outline" className="flex-1" onClick={() => handleOpenStands(event)}><DoorOpen className="h-4 w-4 mr-2" /> Stands</Button>
           {registration.status === 'pending_payment' && !isPastEvent && (
             <Button onClick={() => handleOpenUploadDialog(registration)} className="flex-1 btn-orange text-white"><Upload className="h-4 w-4 mr-2" /> Enviar Comprovante</Button>
           )}
@@ -235,6 +365,95 @@ const ParticipantMyEvents = () => {
             <Button onClick={handleUploadSubmit} disabled={!file || isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Enviar para Análise
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Stands */}
+      <Dialog open={standsModalOpen} onOpenChange={setStandsModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Stands do Evento: <span className="font-semibold">{standsEventName}</span></DialogTitle>
+          </DialogHeader>
+          {standsLoading ? (
+            <div className="py-8 text-center text-gray-500">Carregando stands...</div>
+          ) : stands.length === 0 ? (
+            <div className="py-8 text-center text-gray-500">Nenhum stand cadastrado para este evento.</div>
+          ) : (
+            <ul className="space-y-4 max-h-96 overflow-y-auto">
+              {stands.map(stand => (
+                <li key={stand.id} className="border rounded-lg p-4 bg-gray-50 flex flex-col gap-1">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="font-bold text-blue-800 text-lg">{stand.name}</div>
+                      <div className="text-sm text-gray-700">{stand.description}</div>
+                      <div className="text-xs text-gray-500">Valor: CHF {stand.price}</div>
+                      <div className="text-xs text-gray-500">Status: {stand.status}</div>
+                      {stand.reserved_by && (
+                        <div className="text-xs text-gray-500">
+                          Reservado por: {allUsers.find(u => u.id === stand.reserved_by)?.name || stand.reserved_by}
+                        </div>
+                      )}
+                      {stand.status === 'reservado' && stand.reserved_by === profile?.id && (
+                        <div className="mt-1">
+                          <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${stand.payment_status === 'pago' ? 'bg-green-100 text-green-800' : stand.payment_status === 'em_analise' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'}`}>{stand.payment_status === 'pago' ? 'Pago' : stand.payment_status === 'em_analise' ? 'Em análise' : 'Pendente'}</span>
+                        </div>
+                      )}
+                    </div>
+                    {stand.status === 'disponivel' && (
+                      <Button
+                        className="ml-4"
+                        size="sm"
+                        onClick={() => handleReserveStand(stand)}
+                      >
+                        Reservar
+                      </Button>
+                    )}
+                    {stand.status === 'reservado' && stand.reserved_by === profile?.id && stand.payment_status !== 'pago' && (
+                      <Button
+                        className="ml-4"
+                        size="sm"
+                        variant="success"
+                        onClick={() => handleOpenPayModal(stand)}
+                        disabled={stand.payment_status === 'em_analise'}
+                      >
+                        Pagar
+                      </Button>
+                    )}
+                    {stand.status === 'reservado' && stand.reserved_by === profile?.id && (
+                      <Button
+                        className="ml-4"
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleCancelReservation(stand)}
+                        disabled={stand.payment_status === 'em_analise' || stand.payment_status === 'pago'}
+                      >
+                        Cancelar Reserva
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de pagamento do stand */}
+      <Dialog open={payModalOpen} onOpenChange={setPayModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enviar comprovante de pagamento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input type="file" accept="image/*,application/pdf" onChange={e => setPayFile(e.target.files[0])} />
+            {payFile && <div className="text-sm text-gray-600">Arquivo selecionado: {payFile.name}</div>}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setPayModalOpen(false)} variant="outline">Cancelar</Button>
+            <Button onClick={handlePaySubmit} disabled={!payFile || payLoading} className="btn-primary text-white">
+              {payLoading ? 'Enviando...' : 'Enviar'}
             </Button>
           </DialogFooter>
         </DialogContent>

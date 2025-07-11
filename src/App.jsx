@@ -37,6 +37,7 @@ import OrganizerGiveaways from '@/components/organizer/OrganizerGiveaways';
 import OrganizerMarketplace from '@/components/organizer/OrganizerMarketplace';
 import OrganizerCollaborators from '@/components/organizer/OrganizerCollaborators';
 import OrganizerFinances from '@/components/organizer/OrganizerFinances';
+import OrganizerPayments from '@/components/organizer/OrganizerPayments';
 import FooterInstallApp from './components/ui/FooterInstallApp';
 
 const PageTitleUpdater = () => {
@@ -91,6 +92,7 @@ const PageTitleUpdater = () => {
       else if (path.endsWith("/collaborators")) title = "Colaboradores - Dashboard do Organizador - Event Connect";
       else if (path.endsWith("/finances")) title = "Financeiro - Dashboard do Organizador - Event Connect";
       else if (path.endsWith("/manual-payment")) title = "Pagamento Manual - Dashboard do Organizador - Event Connect";
+      else if (path.endsWith("/payments")) title = "Pagamentos - Dashboard do Organizador - Event Connect";
       else title = "Dashboard do Organizador - Event Connect";
     }
     else if (path.startsWith("/organizador/")) title = "Perfil do Organizador - Event Connect";
@@ -148,6 +150,7 @@ function App() {
                   <Route path="collaborators" element={<OrganizerCollaborators />} />
                   <Route path="finances" element={<OrganizerFinances />} />
                   <Route path="manual-payment" element={<ManualPaymentPage />} />
+                  <Route path="payments" element={<OrganizerPayments />} />
                 </Route>
 
                 <Route 

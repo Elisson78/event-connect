@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Zap } from 'lucide-react';
+import { Plus, Zap, Loader2, RefreshCw, Eye } from 'lucide-react';
 import OrganizerEventForm from '@/components/organizer/OrganizerEventForm';
 import OrganizerEventList from '@/components/organizer/OrganizerEventList';
 import OrganizerStatsCards from '@/components/organizer/OrganizerStatsCards';
 import { useEvents } from '@/contexts/EventContext';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/supabaseClient';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const initialFormData = {
   name: '',
@@ -31,7 +34,7 @@ const initialFormData = {
 
 const OrganizerOverview = () => {
   const { profile: user } = useProfile();
-  const { events, createEvent, updateEvent, deleteEvent, getEventRegistrations, loadingEvents, refetchEvents } = useEvents();
+  const { events, createEvent, updateEvent, deleteEvent, getEventRegistrations, loadingEvents, refetchEvents, allUsers, getEventStands } = useEvents();
   const { toast } = useToast();
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -39,6 +42,9 @@ const OrganizerOverview = () => {
   const [editingEvent, setEditingEvent] = useState(null);
   const [formData, setFormData] = useState(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [stands, setStands] = useState([]);
+  const [standsLoading, setStandsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('dados'); // Adicionado para controlar a aba ativa
 
   useEffect(() => {
     if (user) {
@@ -46,7 +52,18 @@ const OrganizerOverview = () => {
     }
   }, [user, refetchEvents]);
 
-  const organizerEvents = events.filter(event => event.organizer_id === user?.id);
+  // Adicione este useEffect para buscar stands ao abrir a aba 'Status dos Stands'
+  useEffect(() => {
+    if (activeTab === 'status-stands' && editingEvent?.id) {
+      fetchStandsForEvent(editingEvent.id);
+    }
+  }, [activeTab, editingEvent]);
+
+  const organizerEvents = events.filter(event =>
+    event.organizer_id === user?.id ||
+    event.organizer_id === user?.user_id ||
+    event.organizer_id === user?.user_metadata?.id
+  );
   const totalParticipants = organizerEvents.reduce((sum, event) => sum + (event.current_participants || 0), 0);
 
   const handleInputChange = (field, value) => {
@@ -229,14 +246,48 @@ const OrganizerOverview = () => {
 
       if (isEditing && editingEvent) {
         await updateEvent(editingEvent.id, eventPayload);
+        // Atualizar stands ao editar evento
+        if (editingEvent.id) {
+          // Remove todos os stands antigos
+          await supabase.from('event_stands').delete().eq('event_id', editingEvent.id);
+          // Insere os stands atuais
+          if (stands.length > 0) {
+            const standRows = stands.map(s => ({
+              event_id: editingEvent.id,
+              name: s.name,
+              description: s.description,
+              price: parseFloat(s.price) || 0,
+              status: s.status || 'disponivel'
+            }));
+            const { error: standError } = await supabase.from('event_stands').insert(standRows);
+            if (standError) {
+              toast({ title: "Erro ao salvar stands", description: standError.message, variant: "destructive" });
+            }
+          }
+        }
         toast({ title: "Evento atualizado!", description: `O evento "${formData.name}" foi atualizado.` });
         setIsEditDialogOpen(false);
       } else {
-        const newEvent = await createEvent(eventPayload);
-        toast({ title: "Evento criado!", description: `O evento "${newEvent.name}" foi criado.` });
+        const createdEvent = await createEvent(eventPayload);
+        // Salvar stands se houver
+        if (createdEvent && createdEvent.id && stands.length > 0) {
+          const standRows = stands.map(s => ({
+            event_id: createdEvent.id,
+            name: s.name,
+            description: s.description,
+            price: parseFloat(s.price) || 0,
+            status: 'disponivel'
+          }));
+          const { error: standError } = await supabase.from('event_stands').insert(standRows);
+          if (standError) {
+            toast({ title: "Erro ao salvar stands", description: standError.message, variant: "destructive" });
+          }
+        }
+        toast({ title: "Evento criado!", description: "Seu evento foi salvo com sucesso." });
         setIsCreateDialogOpen(false);
+        resetForm();
+        refetchEvents();
       }
-      resetForm();
     } catch (error) {
       console.error("Error saving event:", error);
       console.error("Error details:", {
@@ -261,7 +312,7 @@ const OrganizerOverview = () => {
     }
   };
 
-  const openEditDialog = (event) => {
+  const openEditDialog = async (event) => {
     setEditingEvent(event);
     setFormData({
       name: event.name,
@@ -274,7 +325,6 @@ const OrganizerOverview = () => {
       category_id: event.category_id,
       details: event.details || {},
       max_participants: event.max_participants.toString(),
-      // Converte o preço para string para o formulário, tratando corretamente o valor 0.
       price: event.price != null ? String(event.price) : '',
       status: event.status,
       current_participants: event.current_participants,
@@ -282,7 +332,66 @@ const OrganizerOverview = () => {
       banner_image_url: event.banner_image_url || '',
       ad_plan_id: event.ad_plan_id || '',
     });
+    // Buscar stands do evento no Supabase
+    if (event.id) {
+      const { data: standsData, error } = await supabase
+        .from('event_stands')
+        .select('id, name, description, price, status, reserved_by')
+        .eq('event_id', event.id);
+      if (!error && Array.isArray(standsData)) {
+        setStands(standsData.map(s => ({
+          name: s.name,
+          description: s.description,
+          price: s.price,
+          status: s.status,
+          id: s.id,
+          reserved_by: s.reserved_by
+        })));
+      } else {
+        setStands([]);
+      }
+    } else {
+      setStands([]);
+    }
     setIsEditDialogOpen(true);
+  };
+
+  // Função para buscar stands atualizados
+  const fetchStandsForEvent = async (eventId) => {
+    if (!eventId) return;
+    setStandsLoading(true);
+    try {
+      const standsData = await getEventStands(eventId);
+      setStands(standsData);
+    } catch (error) {
+      console.error('Erro ao buscar stands:', error);
+      toast({ title: 'Erro ao carregar stands', description: error.message, variant: 'destructive' });
+    } finally {
+      setStandsLoading(false);
+    }
+  };
+
+  const handleSaveStandsStatus = async () => {
+    setIsSubmitting(true);
+    try {
+      for (const stand of stands) {
+        await supabase
+          .from('event_stands')
+          .update({
+            status: stand.status,
+            reserved_by: stand.reserved_by || null,
+            payment_status: stand.status === 'vendido' ? 'pago' : stand.payment_status || null,
+          })
+          .eq('id', stand.id);
+      }
+      toast({ title: 'Status dos stands atualizado!', variant: 'success' });
+      // Atualiza lista após salvar
+      if (editingEvent?.id) await fetchStandsForEvent(editingEvent.id);
+    } catch (e) {
+      toast({ title: 'Erro ao salvar alterações', description: e.message, variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (loadingEvents && !organizerEvents.length) {
@@ -315,6 +424,7 @@ const OrganizerOverview = () => {
                     onSubmit={(e) => handleSubmitEvent(e, false)} 
                     onCancel={() => { setIsCreateDialogOpen(false); resetForm();}} 
                     submitButtonText={isSubmitting ? "Criando..." : "Criar Evento"}
+                    onStandsChange={setStands}
                   />
                 </DialogContent>
               </Dialog>
@@ -344,13 +454,225 @@ const OrganizerOverview = () => {
             <DialogTitle className="text-2xl font-bold text-gray-800">Editar Evento</DialogTitle>
             <DialogDescription className="text-gray-600">Atualize as informações do seu evento.</DialogDescription>
             </DialogHeader>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="dados">Dados</TabsTrigger>
+                <TabsTrigger value="stands">Stands</TabsTrigger>
+                <TabsTrigger value="status-stands">Status dos Stands</TabsTrigger>
+              </TabsList>
+              <TabsContent value="dados">
             <OrganizerEventForm 
             formData={formData} 
             onInputChange={handleInputChange} 
             onSubmit={(e) => handleSubmitEvent(e, true)} 
             onCancel={() => { setIsEditDialogOpen(false); resetForm();}} 
             submitButtonText={isSubmitting ? "Salvando..." : "Salvar Alterações"}
-            />
+                  stands={stands}
+                  onStandsChange={setStands}
+                />
+              </TabsContent>
+              <TabsContent value="stands">
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-blue-900 text-lg mb-2">Gerenciar Stands</h3>
+                  <table className="min-w-full bg-white border rounded shadow text-sm">
+                    <thead>
+                      <tr>
+                        <th className="px-3 py-2 text-left">Nome</th>
+                        <th className="px-3 py-2 text-left">Descrição</th>
+                        <th className="px-3 py-2 text-left">Valor (R$)</th>
+                        <th className="px-3 py-2 text-left">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stands.map((stand, idx) => (
+                        <tr key={idx} className="border-b">
+                          <td className="px-3 py-2 font-medium">
+                            <input
+                              className="border rounded px-2 py-1 w-full"
+                              value={stand.name}
+                              onChange={e => {
+                                const updated = [...stands];
+                                updated[idx].name = e.target.value;
+                                setStands(updated);
+                              }}
+                            />
+                          </td>
+                          <td className="px-3 py-2">
+                            <input
+                              className="border rounded px-2 py-1 w-full"
+                              value={stand.description}
+                              onChange={e => {
+                                const updated = [...stands];
+                                updated[idx].description = e.target.value;
+                                setStands(updated);
+                              }}
+                            />
+                          </td>
+                          <td className="px-3 py-2">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              className="border rounded px-2 py-1 w-full"
+                              value={stand.price}
+                              onChange={e => {
+                                const updated = [...stands];
+                                updated[idx].price = e.target.value;
+                                setStands(updated);
+                              }}
+                            />
+                          </td>
+                          <td className="px-3 py-2 flex gap-2">
+                            <button type="button" className="bg-red-500 text-white px-2 py-1 rounded" onClick={() => {
+                              const updated = stands.filter((_, i) => i !== idx);
+                              setStands(updated);
+                            }}>Remover</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="flex gap-2 mt-4">
+                    <button type="button" className="bg-blue-500 text-white px-4 py-2 rounded" onClick={() => setStands([...stands, { name: '', description: '', price: '' }])}>Adicionar Stand</button>
+                  </div>
+                  <div className="flex justify-end mt-4">
+                    <button type="button" className="bg-orange-600 text-white px-6 py-2 rounded" onClick={(e) => handleSubmitEvent(e, true)} disabled={isSubmitting}>
+                      {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+                    </button>
+                  </div>
+                </div>
+              </TabsContent>
+              <TabsContent value="status-stands">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-semibold text-blue-900 text-lg mb-2">Status dos Stands</h3>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => fetchStandsForEvent(editingEvent?.id)}
+                      disabled={standsLoading}
+                    >
+                      {standsLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                      Atualizar
+                    </Button>
+                  </div>
+                  {/* Painel financeiro */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div className="bg-green-50 border border-green-200 rounded p-4 flex flex-col items-center">
+                      <span className="text-green-700 font-bold text-lg">{stands.filter(s => s.status === 'vendido' && s.payment_status === 'pago').length}</span>
+                      <span className="text-green-900 text-sm">Stands Vendidos</span>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded p-4 flex flex-col items-center">
+                      <span className="text-blue-700 font-bold text-lg">CHF {stands.filter(s => s.status === 'vendido' && s.payment_status === 'pago').reduce((sum, s) => sum + (Number(s.price) || 0), 0).toFixed(2)}</span>
+                      <span className="text-blue-900 text-sm">Valor Recebido</span>
+                    </div>
+                    <div className="bg-yellow-50 border border-yellow-200 rounded p-4 flex flex-col items-center">
+                      <span className="text-yellow-700 font-bold text-lg">CHF {stands.filter(s => s.status === 'reservado' && s.payment_status !== 'pago').reduce((sum, s) => sum + (Number(s.price) || 0), 0).toFixed(2)}</span>
+                      <span className="text-yellow-900 text-sm">Valor Pendente</span>
+                    </div>
+                  </div>
+                  {/* Fim painel financeiro */}
+                  {standsLoading ? (
+                    <div className="text-center text-gray-500 py-8">Carregando status dos stands...</div>
+                  ) : stands.length === 0 ? (
+                    <div className="text-center text-gray-500 py-8">Nenhum stand cadastrado para este evento.</div>
+                  ) : (
+                    <>
+                      <table className="min-w-full bg-white border rounded shadow text-sm">
+                        <thead>
+                          <tr>
+                            <th className="px-3 py-2 text-left">Nome</th>
+                            <th className="px-3 py-2 text-left">Valor (R$)</th>
+                            <th className="px-3 py-2 text-left">Status</th>
+                            <th className="px-3 py-2 text-left">Reservado por</th>
+                            <th className="px-3 py-2 text-left">Pagamento</th>
+                            <th className="px-3 py-2 text-left">Ver comprovante</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {stands.map((stand, idx) => (
+                            <tr key={idx}>
+                              <td className="px-3 py-2">{stand.name}</td>
+                              <td className="px-3 py-2">{stand.price}</td>
+                              <td className="px-3 py-2">
+                                <Select value={stand.status || 'disponivel'} onValueChange={value => {
+                                  const updated = [...stands];
+                                  updated[idx].status = value;
+                                  setStands(updated);
+                                }}>
+                                  <SelectTrigger className="w-32">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="disponivel">
+                                      <span className="text-gray-700 font-semibold">Disponível</span>
+                                    </SelectItem>
+                                    <SelectItem value="reservado">
+                                      <span className="text-blue-700 font-bold">Reservado</span>
+                                    </SelectItem>
+                                    <SelectItem value="vendido">
+                                      <span className="text-green-700 font-bold">Vendido</span>
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </td>
+                              <td className="px-3 py-2">
+                                {['reservado', 'vendido'].includes(stand.status) && !stand.reserved_by ? (
+                                  <Select value={stand.reserved_by || ''} onValueChange={value => {
+                                    const updated = [...stands];
+                                    updated[idx].reserved_by = value;
+                                    setStands(updated);
+                                  }}>
+                                    <SelectTrigger className="w-40">
+                                      <SelectValue placeholder="Selecionar participante" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {allUsers?.map(user => (
+                                        <SelectItem key={user.id} value={user.id}>{user.name || user.email}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                ) : (
+                                  stand.reserved_by
+                                    ? (allUsers?.find(u => u.id === stand.reserved_by)?.name ||
+                                       allUsers?.find(u => u.id === stand.reserved_by)?.email ||
+                                       stand.reserved_by)
+                                    : <span className="text-gray-400">—</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2">
+                                {stand.payment_status === 'pago' && <span className="text-green-700 font-bold">Pago</span>}
+                                {stand.payment_status === 'em_analise' && <span className="text-yellow-700 font-bold">Em análise</span>}
+                                {(!stand.payment_status || stand.payment_status === 'pendente') && <span className="text-gray-500">Pendente</span>}
+                              </td>
+                              <td className="px-3 py-2 text-center">
+                                {stand.payment_receipt_url ? (
+                                  <Button size="icon" variant="ghost" onClick={() => window.open(stand.payment_receipt_url, '_blank')} title="Ver comprovante">
+                                    <Eye className="h-5 w-5 text-blue-700" />
+                                  </Button>
+                                ) : (
+                                  <Eye className="h-5 w-5 text-gray-300" title="Sem comprovante" />
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <div className="flex justify-end mt-4">
+                        <button
+                          type="button"
+                          className="bg-orange-600 text-white px-6 py-2 rounded"
+                          onClick={handleSaveStandsStatus}
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
         </DialogContent>
         </Dialog>
     </div>

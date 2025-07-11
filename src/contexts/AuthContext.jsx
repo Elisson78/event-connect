@@ -79,6 +79,24 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Garante que o usuário existe na tabela users
+  const ensureUserInUsersTable = async (authUser) => {
+    if (!authUser?.id) return;
+    const { data: userExists } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', authUser.id)
+      .single();
+    if (!userExists) {
+      await supabase.from('users').insert({
+        id: authUser.id,
+        email: authUser.email,
+        name: authUser.user_metadata?.name || authUser.email,
+        role: authUser.user_metadata?.role || 'participant',
+      });
+    }
+  };
+
   useEffect(() => {
     const fetchInitialUser = async () => {
       setLoading(true);
@@ -135,6 +153,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error("Falha no login: usuário não retornado.");
       }
       
+      await ensureUserInUsersTable(data.user); // <-- Garante usuário na tabela
       return await fetchUserDetails(data.user);
     } catch (error) {
       console.error("Login error in AuthContext:", error);
@@ -175,6 +194,8 @@ export const AuthProvider = ({ children }) => {
         console.error("Supabase signUp did not return a user object:", data);
         throw new Error("Falha no registro: usuário não retornado.");
       }
+
+      await ensureUserInUsersTable(data.user); // <-- Garante usuário na tabela
 
       if (role === 'participant') {
         let participantCode;

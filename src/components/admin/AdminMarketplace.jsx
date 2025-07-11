@@ -216,8 +216,8 @@ const AdminMarketplace = () => {
               </Select>
             </div>
             <div>
-              <Label htmlFor="price">Preço (R$)</Label>
-              <Input id="price" type="number" step="0.01" value={formData.price} onChange={handleInputChange} required />
+              <Label htmlFor="price">Preço (CHF)</Label>
+              <Input id="price" type="number" step="0.01" value={formData.price} onChange={handleInputChange} required placeholder="Ex: 300.00" />
             </div>
             <div>
               <Label htmlFor="description">Descrição</Label>
