@@ -10,6 +10,20 @@ import { useToast } from '@/components/ui/use-toast';
 
 const initialForm = { type: 'manual', manualSubtype: '', name: '', instructions: '', pixKey: '', link: '', twint: '', iban: '', bankName: '', accountNumber: '', accountHolder: '' };
 
+// Lista de métodos prontos
+const PAYMENT_METHODS = [
+  { key: 'twint', label: 'TWINT', placeholder: 'Número Twint', field: 'twint' },
+  { key: 'mbway', label: 'MB WAY', placeholder: 'Número MB WAY', field: 'mbway' },
+  { key: 'pix', label: 'Pix', placeholder: 'Chave Pix', field: 'pix' },
+  { key: 'conta', label: 'Transferência Bancária', field: 'conta', fields: [
+    { key: 'account_holder', label: 'Titular da Conta', placeholder: 'Nome do titular' },
+    { key: 'bank_name', label: 'Nome do Banco', placeholder: 'Nome do banco' },
+    { key: 'iban', label: 'IBAN', placeholder: 'IBAN' },
+    { key: 'account_number', label: 'Número da Conta', placeholder: 'Número da conta' },
+    { key: 'bic_swift', label: 'BIC/SWIFT', placeholder: 'Código BIC/SWIFT' },
+  ] },
+];
+
 const OrganizerPayments = () => {
   const { profile } = useProfile();
   const { toast } = useToast();
@@ -18,6 +32,8 @@ const OrganizerPayments = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [editingIdx, setEditingIdx] = useState(null);
+  // Novo: Estado para métodos prontos
+  const [readyMethods, setReadyMethods] = useState({});
 
   const handleOpen = (idx = null) => {
     if (idx !== null) {
@@ -49,6 +65,52 @@ const OrganizerPayments = () => {
       setLoading(false);
     };
     fetchMethods();
+  }, [profile, toast]);
+
+  // Função para buscar métodos prontos do banco (para ser usada após salvar)
+  const fetchReadyMethods = async () => {
+    if (!profile?.id) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('organizer_payment_methods')
+      .select('*')
+      .eq('organizer_id', profile.id);
+    if (error) {
+      toast({ title: 'Erro ao buscar métodos', description: error.message, variant: 'destructive' });
+      setReadyMethods({});
+    } else {
+      // Montar objeto por key
+      const obj = {};
+      PAYMENT_METHODS.forEach(m => {
+        if (m.key === 'conta') {
+          obj[m.key] = data?.find(d => d.method_type === m.key) || {
+            organizer_id: profile.id,
+            method_type: m.key,
+            is_active: false,
+            account_holder: '',
+            bank_name: '',
+            iban: '',
+            account_number: '',
+            bic_swift: '',
+          };
+        } else {
+          obj[m.key] = data?.find(d => d.method_type === m.key) || {
+            organizer_id: profile.id,
+            method_type: m.key,
+            is_active: false,
+            account_holder: '',
+            [m.field]: '',
+          };
+        }
+      });
+      setReadyMethods(obj);
+    }
+    setLoading(false);
+  };
+
+  // Buscar métodos prontos do banco ao carregar
+  useEffect(() => {
+    fetchReadyMethods();
   }, [profile, toast]);
 
   // Salvar método no banco
@@ -94,6 +156,74 @@ const OrganizerPayments = () => {
     setModalOpen(false);
   };
 
+  // Salvar/atualizar método pronto
+  const handleSaveReady = async (key) => {
+    const method = readyMethods[key];
+    if (key === 'conta') {
+      if (!method.account_holder || !method.bank_name || !method.iban || !method.account_number) {
+        toast({ title: 'Preencha todos os campos obrigatórios', description: 'Titular, banco, IBAN e número da conta são obrigatórios.', variant: 'destructive' });
+        return;
+      }
+    } else {
+      if (!method.account_holder || !method[key]) {
+        toast({ title: 'Preencha todos os campos', description: 'Nome do recebedor e dado principal são obrigatórios.', variant: 'destructive' });
+        return;
+      }
+    }
+    setLoading(true);
+    if (method.id) {
+      // Update
+      const updatePayload = { is_active: method.is_active };
+      if (key === 'conta') {
+        updatePayload.account_holder = method.account_holder;
+        updatePayload.bank_name = method.bank_name;
+        updatePayload.iban = method.iban;
+        updatePayload.account_number = method.account_number;
+        updatePayload.bic_swift = method.bic_swift;
+      } else {
+        updatePayload.account_holder = method.account_holder;
+        updatePayload[key] = method[key];
+      }
+      const { error } = await supabase
+        .from('organizer_payment_methods')
+        .update(updatePayload)
+        .eq('id', method.id);
+      if (error) {
+        toast({ title: 'Erro ao atualizar', description: error.message, variant: 'destructive' });
+      } else {
+        toast({ title: 'Método atualizado', variant: 'success' });
+      }
+    } else {
+      // Insert
+      const insertPayload = {
+        organizer_id: profile.id,
+        method_type: key,
+        is_active: method.is_active,
+      };
+      if (key === 'conta') {
+        insertPayload.account_holder = method.account_holder;
+        insertPayload.bank_name = method.bank_name;
+        insertPayload.iban = method.iban;
+        insertPayload.account_number = method.account_number;
+        insertPayload.bic_swift = method.bic_swift;
+      } else {
+        insertPayload.account_holder = method.account_holder;
+        insertPayload[key] = method[key];
+      }
+      const { error } = await supabase
+        .from('organizer_payment_methods')
+        .insert(insertPayload);
+      if (error) {
+        toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+      } else {
+        toast({ title: 'Método salvo', variant: 'success' });
+      }
+    }
+    setLoading(false);
+    // Recarregar métodos após salvar
+    await fetchReadyMethods();
+  };
+
   // Remover método do banco
   const handleRemove = async (idx) => {
     const method = methods[idx];
@@ -113,40 +243,46 @@ const OrganizerPayments = () => {
   };
 
   return (
-    <Card className="max-w-2xl mx-auto mt-8">
+    <Card className="w-full mt-8 shadow-none border-none bg-white">
       <CardHeader>
         <CardTitle>Métodos de Pagamento</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 flex justify-end">
-          <Button onClick={() => handleOpen()}>Adicionar Método</Button>
-        </div>
-        {loading ? (
-          <div className="text-gray-500 text-center py-8">Carregando métodos...</div>
-        ) : methods.length === 0 ? (
-          <div className="text-gray-500 text-center py-8">Nenhum método cadastrado ainda.</div>
-        ) : (
-          <ul className="space-y-4">
-            {methods.map((m, idx) => (
-              <li key={idx} className="border rounded p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2 bg-gray-50">
+        <div className="w-full px-6 pb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 w-full mx-auto">
+            {PAYMENT_METHODS.map(m => (
+              <div key={m.key} className="border rounded-lg bg-gray-50 flex flex-col justify-between min-h-[340px] max-w-xs w-full mx-auto p-5 shadow-sm">
                 <div>
-                  <div className="font-bold text-lg text-blue-800">{m.name || m.manualSubtype?.toUpperCase() || m.type} <span className="text-xs text-gray-500 ml-2">[{m.type === 'manual' ? (m.manualSubtype ? m.manualSubtype.charAt(0).toUpperCase() + m.manualSubtype.slice(1) : 'Manual') : 'Online'}]</span></div>
-                  {m.account_holder && <div className="text-xs text-gray-700"><strong>Recebedor:</strong> {m.account_holder}</div>}
-                  {m.instructions && <div className="text-sm text-gray-700">{m.instructions}</div>}
-                  {m.twint && <div className="text-xs text-gray-500">Twint: {m.twint}</div>}
-                  {m.iban && <div className="text-xs text-gray-500">IBAN: {m.iban}</div>}
-                  {m.bankName && <div className="text-xs text-gray-500">Banco: {m.bankName}</div>}
-                  {m.accountNumber && <div className="text-xs text-gray-500">Conta: {m.accountNumber}</div>}
-                  {m.link && <div className="text-xs text-blue-600">Link: <a href={m.link} target="_blank" rel="noopener noreferrer" className="underline">{m.link}</a></div>}
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-bold text-lg">{m.label}</span>
+                    <label className="flex items-center gap-2 text-xs">
+                      Ativo
+                      <input type="checkbox" checked={!!readyMethods[m.key]?.is_active} onChange={e => setReadyMethods(rm => ({ ...rm, [m.key]: { ...rm[m.key], is_active: e.target.checked } }))} />
+                    </label>
+                  </div>
+                  {m.key === 'conta' ? (
+                    <>
+                      {m.fields.map(f => (
+                        <React.Fragment key={f.key}>
+                          <Label>{f.label}</Label>
+                          <Input value={readyMethods[m.key]?.[f.key] || ''} onChange={e => setReadyMethods(rm => ({ ...rm, [m.key]: { ...rm[m.key], [f.key]: e.target.value } }))} placeholder={f.placeholder} />
+                        </React.Fragment>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      <Label>Nome do Recebedor</Label>
+                      <Input value={readyMethods[m.key]?.account_holder || ''} onChange={e => setReadyMethods(rm => ({ ...rm, [m.key]: { ...rm[m.key], account_holder: e.target.value } }))} placeholder="Nome da pessoa que vai receber" />
+                      <Label>{m.label}</Label>
+                      <Input value={readyMethods[m.key]?.[m.key] || ''} onChange={e => setReadyMethods(rm => ({ ...rm, [m.key]: { ...rm[m.key], [m.key]: e.target.value } }))} placeholder={m.placeholder} />
+                    </>
+                  )}
                 </div>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handleOpen(idx)}>Editar</Button>
-                  <Button size="sm" variant="destructive" onClick={() => handleRemove(idx)}>Remover</Button>
-                </div>
-              </li>
+                <Button className="mt-4 w-full" onClick={() => handleSaveReady(m.key)} disabled={loading}>Salvar Configurações</Button>
+              </div>
             ))}
-          </ul>
-        )}
+          </div>
+        </div>
       </CardContent>
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent>

@@ -24,13 +24,19 @@ const PaymentPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    console.log('PaymentPage: eventId =', eventId);
+    console.log('PaymentPage: events =', events);
+    
     const currentEvent = events.find(e => e.id === eventId);
+    console.log('PaymentPage: currentEvent =', currentEvent);
+    
     if (currentEvent) {
       setEvent(currentEvent);
     }
   }, [eventId, events]);
 
   const fetchPaymentOptions = useCallback(async (organizerId) => {
+    console.log('PaymentPage: fetchPaymentOptions called with organizerId =', organizerId);
     setLoadingPaymentOptions(true);
     try {
       const { data: orgData, error: orgError } = await supabase
@@ -40,7 +46,8 @@ const PaymentPage = () => {
         .eq('is_active', true);
 
       if (orgError) throw orgError;
-      setOrganizerMethods(orgData);
+      console.log('PaymentPage: organizer methods =', orgData);
+      setOrganizerMethods(orgData || []);
 
       const { data: platData, error: platError } = await supabase
         .from('payment_gateways')
@@ -49,8 +56,10 @@ const PaymentPage = () => {
         .eq('is_enabled', true);
 
       if (platError) throw platError;
-      setPlatformMethods(platData);
+      console.log('PaymentPage: platform methods =', platData);
+      setPlatformMethods(platData || []);
     } catch (error) {
+      console.error('PaymentPage: Error fetching payment options:', error);
       toast({ title: 'Erro ao carregar opções de pagamento', description: error.message, variant: 'destructive' });
     } finally {
       setLoadingPaymentOptions(false);
@@ -151,26 +160,43 @@ const PaymentPage = () => {
     });
   }
 
+  // Verificar se está carregando
   if (loadingEvents || profileLoading) {
-    return <div className="flex h-screen items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-orange-500" /></div>;
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <Navbar />
+        <div className="flex h-screen items-center justify-center">
+          <Loader2 className="h-16 w-16 animate-spin text-orange-500" />
+        </div>
+      </div>
+    );
   }
   
+  // Verificar se o evento existe
   if (!event) {
     return (
+      <div className="min-h-screen bg-gray-100">
+        <Navbar />
         <div className="min-h-screen bg-gray-50 text-center py-20">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Evento não encontrado</h1>
-            <Link to="/events"><Button>Voltar aos eventos</Button></Link>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Evento não encontrado</h1>
+          <p className="text-gray-600 mb-4">ID do evento: {eventId}</p>
+          <Link to="/events"><Button>Voltar aos eventos</Button></Link>
         </div>
+      </div>
     );
   }
 
+  // Verificar se o usuário já está inscrito
   if (isUserRegistered(event.id, profile?.id)) {
      return (
-        <div className="min-h-screen bg-gray-50 text-center py-20">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Você já está inscrito neste evento.</h1>
-            <Link to="/participant/dashboard/my-events"><Button>Ver minhas inscrições</Button></Link>
-        </div>
-    );
+       <div className="min-h-screen bg-gray-100">
+         <Navbar />
+         <div className="min-h-screen bg-gray-50 text-center py-20">
+           <h1 className="text-2xl font-bold text-gray-900 mb-4">Você já está inscrito neste evento.</h1>
+           <Link to="/participant/dashboard/my-events"><Button>Ver minhas inscrições</Button></Link>
+         </div>
+       </div>
+     );
   }
 
   return (
@@ -193,7 +219,12 @@ const PaymentPage = () => {
                 <CardDescription>Escolha sua forma de pagamento.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {loadingPaymentOptions ? <Loader2 className="animate-spin"/> : (
+                {loadingPaymentOptions ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="animate-spin h-8 w-8" />
+                    <span className="ml-2">Carregando opções de pagamento...</span>
+                  </div>
+                ) : (
                   <div className="space-y-4">
                     {platformMethods.map(method => (
                       <Button key={method.id} className="w-full h-16 text-lg justify-start p-4" onClick={handleCardPayment} disabled={isSubmitting}>
@@ -202,23 +233,64 @@ const PaymentPage = () => {
                     ))}
                     {organizerMethods.map(method => (
                       <div key={method.id} className="border rounded-lg p-4 space-y-3">
-                          <h3 className="font-semibold flex items-center gap-2"><Landmark /> Pagamento Manual ({method.method_type})</h3>
-                          <div className="text-sm bg-gray-50 p-3 rounded-md space-y-1">
-                              {Object.entries(method.details).map(([key, value]) => (
-                                <p key={key}><strong>{key}:</strong> {value}</p>
-                              ))}
-                          </div>
-                          <p className="text-xs text-gray-600 flex items-start gap-2"><AlertCircle className="h-4 w-4 mt-0.5 text-orange-500 flex-shrink-0"/>Após o pagamento, clique no botão abaixo para iniciar a confirmação e garantir sua vaga. Você precisará enviar o comprovante.</p>
-                          <Button className="w-full" onClick={handleManualPayment} disabled={isSubmitting}>
-                            {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : null}
-                            Já paguei, quero enviar o comprovante
-                          </Button>
+                        <h3 className="font-semibold flex items-center gap-2">
+                          <Landmark /> Pagamento Manual ({method.method_type})
+                        </h3>
+                        <div className="text-sm bg-gray-50 p-3 rounded-md space-y-1">
+                          {method.details && typeof method.details === 'object' && Object.keys(method.details).length > 0 ? (
+                            Object.entries(method.details).map(([key, value]) => (
+                              <p key={key}><strong>{key}:</strong> {value}</p>
+                            ))
+                          ) : (
+                            <>
+                              {method.method_type === 'twint' && method.twint && (
+                                <p><strong>TWINT:</strong> {method.twint}</p>
+                              )}
+                              {method.method_type === 'mbway' && method.mbway && (
+                                <p><strong>MB WAY:</strong> {method.mbway}</p>
+                              )}
+                              {method.method_type === 'pix' && method.pix && (
+                                <p><strong>Pix:</strong> {method.pix}</p>
+                              )}
+                              {['twint','mbway','pix','conta'].includes(method.method_type) && method.account_holder && (
+                                <p><strong>Titular:</strong> {method.account_holder}</p>
+                              )}
+                              {method.method_type === 'conta' && method.bank_name && (
+                                <p><strong>Banco:</strong> {method.bank_name}</p>
+                              )}
+                              {method.method_type === 'conta' && method.iban && (
+                                <p><strong>IBAN:</strong> {method.iban}</p>
+                              )}
+                              {method.method_type === 'conta' && method.account_number && (
+                                <p><strong>Nº Conta:</strong> {method.account_number}</p>
+                              )}
+                              {method.method_type === 'conta' && method.bic_swift && (
+                                <p><strong>BIC/SWIFT:</strong> {method.bic_swift}</p>
+                              )}
+                              {/* Se nenhum dado disponível */}
+                              {!(method.twint || method.mbway || method.pix || method.account_holder || method.bank_name || method.iban || method.account_number || method.bic_swift) && (
+                                <p className="text-gray-500">Detalhes do pagamento não disponíveis</p>
+                              )}
+                            </>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-600 flex items-start gap-2">
+                          <AlertCircle className="h-4 w-4 mt-0.5 text-orange-500 flex-shrink-0"/>
+                          Após o pagamento, clique no botão abaixo para iniciar a confirmação e garantir sua vaga. Você precisará enviar o comprovante.
+                        </p>
+                        <Button className="w-full" onClick={handleManualPayment} disabled={isSubmitting}>
+                          {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : null}
+                          Já paguei, quero enviar o comprovante
+                        </Button>
                       </div>
                     ))}
                   </div>
                 )}
                 {(organizerMethods.length === 0 && platformMethods.length === 0 && !loadingPaymentOptions) && (
-                    <p className="text-center text-gray-500">Nenhuma opção de pagamento configurada para este evento.</p>
+                    <div className="text-center py-8">
+                      <p className="text-gray-500 mb-4">Nenhuma opção de pagamento configurada para este evento.</p>
+                      <p className="text-sm text-gray-400">Organizador ID: {event?.organizer_id}</p>
+                    </div>
                 )}
               </CardContent>
             </Card>
@@ -230,7 +302,7 @@ const PaymentPage = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4">
-                    <img  class="h-16 w-16 rounded-md object-cover" alt="Event thumbnail" src="https://images.unsplash.com/photo-1691257790470-b5e4e80ca59f" />
+                    <img className="h-16 w-16 rounded-md object-cover" alt="Event thumbnail" src="https://images.unsplash.com/photo-1691257790470-b5e4e80ca59f" />
                     <div>
                         <h4 className="font-semibold">{event.name}</h4>
                         <p className="text-sm text-gray-500">{new Date(event.date).toLocaleDateString('pt-BR')}</p>
@@ -238,7 +310,7 @@ const PaymentPage = () => {
                 </div>
                 <div className="border-t pt-4 flex justify-between items-center text-lg">
                     <span className="font-semibold">Total</span>
-                    <span className="font-bold text-orange-600">{event.price}</span>
+                    <span className="font-bold text-orange-600">CHF {event.price}</span>
                 </div>
               </CardContent>
             </Card>

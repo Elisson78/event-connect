@@ -557,7 +557,7 @@ const OrganizerOverview = () => {
                     </Button>
                   </div>
                   {/* Painel financeiro */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                     <div className="bg-green-50 border border-green-200 rounded p-4 flex flex-col items-center">
                       <span className="text-green-700 font-bold text-lg">{stands.filter(s => s.status === 'vendido' && s.payment_status === 'pago').length}</span>
                       <span className="text-green-900 text-sm">Stands Vendidos</span>
@@ -569,6 +569,10 @@ const OrganizerOverview = () => {
                     <div className="bg-yellow-50 border border-yellow-200 rounded p-4 flex flex-col items-center">
                       <span className="text-yellow-700 font-bold text-lg">CHF {stands.filter(s => s.status === 'reservado' && s.payment_status !== 'pago').reduce((sum, s) => sum + (Number(s.price) || 0), 0).toFixed(2)}</span>
                       <span className="text-yellow-900 text-sm">Valor Pendente</span>
+                    </div>
+                    <div className="bg-gray-50 border border-gray-200 rounded p-4 flex flex-col items-center">
+                      <span className="text-gray-700 font-bold text-lg">{stands.filter(s => s.status === 'disponivel').length}</span>
+                      <span className="text-gray-900 text-sm">Stands Disponíveis</span>
                     </div>
                   </div>
                   {/* Fim painel financeiro */}

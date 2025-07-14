@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useEvents } from '@/contexts/EventContext';
 import { useProfile } from '@/contexts/ProfileContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -32,6 +32,13 @@ const ParticipantMyEvents = () => {
   const [payFile, setPayFile] = useState(null);
   const [payLoading, setPayLoading] = useState(false);
 
+  // NOVO: Estado para cobranças de stands
+  const [pendingStandPayments, setPendingStandPayments] = useState([]);
+  const [loadingStandPayments, setLoadingStandPayments] = useState(false);
+  const [selectedStandPayment, setSelectedStandPayment] = useState(null);
+  const [standPaymentFile, setStandPaymentFile] = useState(null);
+  const [standPaymentUploading, setStandPaymentUploading] = useState(false);
+
   const userRegistrations = useMemo(() => {
     if (!profile) return [];
     return getUserRegistrations(profile.id);
@@ -63,6 +70,27 @@ const ParticipantMyEvents = () => {
 
   // Filtra apenas inscrições confirmadas (pagas/liberadas)
   const confirmedRegistrations = myRegistrations.filter(reg => reg.status === 'confirmed');
+
+  // NOVO: Buscar cobranças pendentes de stands
+  useEffect(() => {
+    const fetchStandPayments = async () => {
+      if (!profile) return;
+      setLoadingStandPayments(true);
+      const { data, error } = await supabase
+        .from('stand_payments')
+        .select('*, event_stands(name, description, price)')
+        .eq('user_id', profile.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+      if (!error && Array.isArray(data)) {
+        setPendingStandPayments(data);
+      } else {
+        setPendingStandPayments([]);
+      }
+      setLoadingStandPayments(false);
+    };
+    fetchStandPayments();
+  }, [profile]);
 
   const handleOpenUploadDialog = (registration) => {
     setSelectedRegistration(registration);
@@ -143,6 +171,21 @@ const ParticipantMyEvents = () => {
         .eq('id', stand.id)
         .eq('status', 'disponivel'); // Garante update só se ainda está disponível
       if (error) throw error;
+      // === NOVO: Criar cobrança na tabela stand_payments ===
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24h depois
+      const { error: paymentError } = await supabase
+        .from('stand_payments')
+        .insert({
+          stand_id: stand.id,
+          user_id: profile.id,
+          amount: stand.price,
+          status: 'pending',
+          expires_at: expiresAt
+        });
+      if (paymentError) {
+        toast({ title: 'Reserva feita, mas houve erro ao criar cobrança!', description: paymentError.message, variant: 'destructive' });
+      }
+      // === FIM NOVO ===
       toast({ title: 'Reserva realizada!', description: `Você reservou o ${stand.name}.`, variant: 'success' });
       // Atualiza a lista de stands no modal
       if (stand.event_id) {
@@ -212,6 +255,34 @@ const ParticipantMyEvents = () => {
       toast({ title: 'Erro ao enviar comprovante', description: err.message, variant: 'destructive' });
     } finally {
       setPayLoading(false);
+    }
+  };
+
+  // NOVO: Função para upload de comprovante de pagamento do stand
+  const handleStandPaymentUpload = async () => {
+    if (!standPaymentFile || !selectedStandPayment) return;
+    setStandPaymentUploading(true);
+    try {
+      const ext = standPaymentFile.name.split('.').pop();
+      const filePath = `stand_payments/${selectedStandPayment.id}_${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('user_files').upload(filePath, standPaymentFile);
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('user_files').getPublicUrl(filePath);
+      // Atualiza no banco
+      const { error: updateError } = await supabase
+        .from('stand_payments')
+        .update({ payment_receipt_url: urlData.publicUrl, status: 'em_analise' })
+        .eq('id', selectedStandPayment.id);
+      if (updateError) throw updateError;
+      toast({ title: 'Comprovante enviado', description: 'Seu comprovante foi enviado para análise.', variant: 'success' });
+      setSelectedStandPayment(null);
+      setStandPaymentFile(null);
+      // Atualiza lista de cobranças
+      setPendingStandPayments(prev => prev.filter(p => p.id !== selectedStandPayment.id));
+    } catch (err) {
+      toast({ title: 'Erro ao enviar comprovante', description: err.message, variant: 'destructive' });
+    } finally {
+      setStandPaymentUploading(false);
     }
   };
 
@@ -454,6 +525,71 @@ const ParticipantMyEvents = () => {
             <Button onClick={() => setPayModalOpen(false)} variant="outline">Cancelar</Button>
             <Button onClick={handlePaySubmit} disabled={!payFile || payLoading} className="btn-primary text-white">
               {payLoading ? 'Enviando...' : 'Enviar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* NOVO: Cobranças pendentes de stands */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Stands Reservados - Pagamento Pendente</CardTitle>
+          <CardDescription>Veja abaixo os stands reservados que aguardam pagamento.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loadingStandPayments ? (
+            <div className="text-center py-8 text-gray-500">Carregando cobranças...</div>
+          ) : pendingStandPayments.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">Nenhuma cobrança pendente de stand.</div>
+          ) : (
+            <ul className="space-y-4">
+              {pendingStandPayments.map(payment => (
+                <li key={payment.id} className="border rounded-lg p-4 bg-yellow-50 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                  <div>
+                    <div className="font-bold text-blue-800 text-lg">{payment.event_stands?.name || 'Stand'}</div>
+                    <div className="text-sm text-gray-700">{payment.event_stands?.description}</div>
+                    <div className="text-xs text-gray-500">Valor: CHF {payment.amount}</div>
+                    <div className="text-xs text-gray-500">Prazo para pagamento: {payment.expires_at ? new Date(payment.expires_at).toLocaleString('pt-BR') : '-'}</div>
+                  </div>
+                  <div className="flex flex-col gap-2 min-w-[180px]">
+                    <Button size="sm" variant="success" onClick={() => setSelectedStandPayment(payment)}>Enviar Comprovante</Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+      {/* Modal de upload de comprovante de pagamento do stand */}
+      <Dialog open={!!selectedStandPayment} onOpenChange={open => { if (!open) { setSelectedStandPayment(null); setStandPaymentFile(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enviar Comprovante de Pagamento do Stand</DialogTitle>
+            <DialogDescription>
+              Stand: <span className="font-semibold">{selectedStandPayment?.event_stands?.name}</span><br />
+              Valor: CHF {selectedStandPayment?.amount}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <Label htmlFor="stand-payment-upload">Arquivo do Comprovante</Label>
+            <Input id="stand-payment-upload" type="file" onChange={e => setStandPaymentFile(e.target.files?.[0] || null)} accept="image/png, image/jpeg, application/pdf" />
+            {standPaymentFile && (
+              <div className="flex items-center justify-between p-2 border rounded-md bg-gray-50 text-sm">
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <FileText className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                  <span className="text-gray-800 truncate">{standPaymentFile.name}</span>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setStandPaymentFile(null)} className="h-8 w-8 flex-shrink-0">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
+            <Button onClick={handleStandPaymentUpload} disabled={!standPaymentFile || standPaymentUploading}>
+              {standPaymentUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Enviar para Análise
             </Button>
           </DialogFooter>
         </DialogContent>
