@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, DollarSign, CheckCircle, AlertTriangle, CreditCard, Receipt, TrendingUp, Pocket, Ticket } from 'lucide-react';
+import { Loader2, DollarSign, CheckCircle, AlertTriangle, CreditCard, Receipt, TrendingUp, Pocket, Ticket, Check, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const FinanceSummaryCard = ({ title, value, icon, color }) => (
@@ -31,6 +31,14 @@ const OrganizerFinances = () => {
   const [summary, setSummary] = useState({ totalFees: 0, paidFees: 0, pendingFees: 0, totalRevenue: 0 });
   const [revenueStands, setRevenueStands] = useState(0); // Receita de stands
   const [standsSales, setStandsSales] = useState([]); // Detalhe das vendas de stands
+  const [pendingStandPayments, setPendingStandPayments] = useState([]); // Pagamentos pendentes de stands
+  const [standsSummary, setStandsSummary] = useState({
+    total_stands_sold: 0,
+    total_revenue: 0,
+    pending_stands: 0,
+    pending_amount: 0,
+    available_stands: 0
+  }); // Resumo de stands
   const [loading, setLoading] = useState(true);
 
   const formatCurrency = (value) => {
@@ -85,21 +93,95 @@ const OrganizerFinances = () => {
         .eq('organizer_id', user.id);
       if (eventsError) throw eventsError;
       const eventIds = (eventsData || []).map(e => e.id);
-      // Buscar stands vendidos/pagos desses eventos
+      console.log('Eventos do organizador encontrados:', eventIds);
+      
+      // Buscar stands vendidos usando RPC
       let standsData = [];
-      if (eventIds.length > 0) {
-        const { data, error } = await supabase
-          .from('event_stands')
-          .select('id, price, status, payment_status, name, event_id, reserved_by, payment_date, events(name), users(name, email)')
-          .in('event_id', eventIds)
-          .eq('status', 'vendido')
-          .eq('payment_status', 'pago');
-        if (error) throw error;
-        standsData = data || [];
+      let standsRevenue = 0;
+      
+      try {
+        // Buscar dados de stands vendidos via RPC
+        const { data: standsSalesData, error: standsSalesError } = await supabase
+          .rpc('get_organizer_stand_sales', { p_organizer_id: user.id });
+          
+        if (standsSalesError) {
+          console.error('Erro ao buscar vendas de stands:', standsSalesError);
+        } else {
+          standsData = standsSalesData || [];
+          standsRevenue = standsData.reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0);
+          console.log('Stands vendidos encontrados:', standsData);
+          console.log('Receita total de stands:', standsRevenue);
+        }
+        
+        // Buscar resumo de stands via RPC
+        const { data: standsSummaryData, error: standsSummaryError } = await supabase
+          .rpc('get_organizer_stands_summary', { p_organizer_id: user.id });
+          
+        if (standsSummaryError) {
+          console.error('Erro ao buscar resumo de stands:', standsSummaryError);
+        } else {
+          console.log('Resumo de stands:', standsSummaryData);
+          if (standsSummaryData && standsSummaryData.length > 0) {
+            setStandsSummary(standsSummaryData[0]);
+          }
+        }
+      } catch (err) {
+        console.error('Erro geral ao buscar dados de stands:', err);
       }
-      const standsRevenue = standsData.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
+      
       setRevenueStands(standsRevenue);
       setStandsSales(standsData);
+      
+      // Debug: Verificar se há stands pagos no geral
+      try {
+        const { data: allPaidStands, error: allPaidError } = await supabase
+          .from('stand_payments')
+          .select(`
+            id,
+            amount,
+            status,
+            event_stands!inner(name, event_id),
+            events!inner(name, organizer_id)
+          `)
+          .eq('status', 'pago')
+          .limit(5);
+          
+        if (allPaidError) {
+          console.error('Erro ao buscar todos os stands pagos:', allPaidError);
+        } else {
+          console.log('Todos os stands pagos (primeiros 5):', allPaidStands);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar todos os stands pagos:', err);
+      }
+      
+      // Buscar pagamentos pendentes de stands dos eventos do organizador
+      let pendingPayments = [];
+      
+      if (eventIds.length > 0) {
+        try {
+          const { data: paymentsData, error: paymentsError } = await supabase
+            .from('stand_payments')
+            .select(`
+              *,
+              event_stands!inner(name, price, event_id),
+              events!inner(name),
+              users(name, email)
+            `)
+            .in('status', ['pending', 'em_analise'])
+            .in('event_stands.event_id', eventIds);
+            
+          if (paymentsError) {
+            console.error('Erro ao buscar pagamentos pendentes:', paymentsError);
+          } else {
+            pendingPayments = paymentsData || [];
+            console.log('Pagamentos pendentes encontrados:', pendingPayments);
+          }
+        } catch (err) {
+          console.error('Erro geral ao buscar pagamentos pendentes:', err);
+        }
+      }
+      setPendingStandPayments(pendingPayments);
     } catch (error) {
       toast({ title: 'Erro ao carregar finanças', description: error.message, variant: 'destructive' });
     } finally {
@@ -113,6 +195,101 @@ const OrganizerFinances = () => {
 
   const handlePayNow = () => {
     navigate('/organizer/dashboard/manual-payment', { state: { pendingAmount: summary.pendingFees } });
+  };
+
+  const handleApprovePayment = async (paymentId) => {
+    try {
+      // Primeiro, buscar o stand_id do pagamento
+      const { data: paymentData, error: fetchError } = await supabase
+        .from('stand_payments')
+        .select('stand_id')
+        .eq('id', paymentId)
+        .single();
+        
+      if (fetchError) throw fetchError;
+      
+      // Atualizar o status do pagamento para 'pago'
+      const { error: paymentError } = await supabase
+        .from('stand_payments')
+        .update({ status: 'pago' })
+        .eq('id', paymentId);
+        
+      if (paymentError) throw paymentError;
+      
+      // Atualizar o status do stand para 'vendido'
+      const { error: standError } = await supabase
+        .from('event_stands')
+        .update({ 
+          status: 'vendido',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', paymentData.stand_id);
+        
+      if (standError) throw standError;
+      
+      toast({ 
+        title: 'Pagamento aprovado', 
+        description: 'O pagamento foi aprovado e o stand foi marcado como vendido.', 
+        variant: 'success' 
+      });
+      
+      // Recarregar dados
+      fetchFinances();
+    } catch (error) {
+      toast({ 
+        title: 'Erro ao aprovar pagamento', 
+        description: error.message, 
+        variant: 'destructive' 
+      });
+    }
+  };
+
+  const handleRejectPayment = async (paymentId) => {
+    try {
+      // Primeiro, buscar o stand_id do pagamento
+      const { data: paymentData, error: fetchError } = await supabase
+        .from('stand_payments')
+        .select('stand_id')
+        .eq('id', paymentId)
+        .single();
+        
+      if (fetchError) throw fetchError;
+      
+      // Atualizar o status do pagamento para 'rejeitado'
+      const { error: paymentError } = await supabase
+        .from('stand_payments')
+        .update({ status: 'rejeitado' })
+        .eq('id', paymentId);
+        
+      if (paymentError) throw paymentError;
+      
+      // Atualizar o status do stand para 'disponivel' (liberar o stand)
+      const { error: standError } = await supabase
+        .from('event_stands')
+        .update({ 
+          status: 'disponivel',
+          user_id: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', paymentData.stand_id);
+        
+      if (standError) throw standError;
+      
+      toast({ 
+        title: 'Pagamento rejeitado', 
+        description: 'O pagamento foi rejeitado e o stand foi liberado.', 
+        variant: 'default' 
+      });
+      
+      // Recarregar dados
+      fetchFinances();
+    } catch (error) {
+      toast({ 
+        title: 'Erro ao rejeitar pagamento', 
+        description: error.message, 
+        variant: 'destructive' 
+      });
+    }
   };
 
   const getStatusVariant = (status) => {
@@ -143,12 +320,20 @@ const OrganizerFinances = () => {
       transition={{ duration: 0.5 }}
       className="space-y-8"
     >
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
-        <FinanceSummaryCard title="Receita Bruta" value={formatCurrency(totalGrossRevenue)} icon={<TrendingUp className="h-5 w-5 text-blue-500" />} color="#3b82f6" />
-        <FinanceSummaryCard title="Taxas da Plataforma" value={formatCurrency(summary.totalFees)} icon={<Receipt className="h-5 w-5 text-gray-500" />} color="#6b7280" />
-        <FinanceSummaryCard title="Lucro Líquido" value={formatCurrency(netProfit)} icon={<Pocket className="h-5 w-5 text-green-500" />} color="#22c55e" />
-        <FinanceSummaryCard title="Saldo a Pagar" value={formatCurrency(summary.pendingFees)} icon={<AlertTriangle className="h-5 w-5 text-red-500" />} color="#ef4444" />
-        <FinanceSummaryCard title="Receita com Stands" value={formatCurrency(revenueStands)} icon={<DollarSign className="h-5 w-5 text-orange-500" />} color="#f59e42" />
+      <div className="space-y-6">
+        {/* Primeira linha - Métricas principais */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <FinanceSummaryCard title="Receita Bruta" value={formatCurrency(totalGrossRevenue)} icon={<TrendingUp className="h-5 w-5 text-blue-500" />} color="#3b82f6" />
+          <FinanceSummaryCard title="Taxas da Plataforma" value={formatCurrency(summary.totalFees)} icon={<Receipt className="h-5 w-5 text-gray-500" />} color="#6b7280" />
+          <FinanceSummaryCard title="Lucro Líquido" value={formatCurrency(netProfit)} icon={<Pocket className="h-5 w-5 text-green-500" />} color="#22c55e" />
+        </div>
+        
+        {/* Segunda linha - Métricas de stands e pendências */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <FinanceSummaryCard title="Saldo a Pagar" value={formatCurrency(summary.pendingFees)} icon={<AlertTriangle className="h-5 w-5 text-red-500" />} color="#ef4444" />
+          <FinanceSummaryCard title="Receita com Stands" value={formatCurrency(revenueStands)} icon={<DollarSign className="h-5 w-5 text-orange-500" />} color="#f59e42" />
+          <FinanceSummaryCard title="Stands Vendidos" value={`${standsSummary.total_stands_sold}`} icon={<CheckCircle className="h-5 w-5 text-green-500" />} color="#22c55e" />
+        </div>
       </div>
 
       {summary.pendingFees > 0 && (
@@ -270,18 +455,18 @@ const OrganizerFinances = () => {
                 <TableHead>Stand</TableHead>
                 <TableHead>Participante</TableHead>
                 <TableHead className="text-right">Valor Pago</TableHead>
-                <TableHead>Data da Venda</TableHead>
+                <TableHead>Data do Pagamento</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {standsSales.length > 0 ? (
                 standsSales.map((sale) => (
                   <TableRow key={sale.id}>
-                    <TableCell className="font-medium">{sale.events?.name || '-'}</TableCell>
-                    <TableCell>{sale.name || '-'}</TableCell>
-                    <TableCell>{sale.users?.name || sale.users?.email || sale.reserved_by || '-'}</TableCell>
-                    <TableCell className="text-right font-mono">{formatCurrency(sale.price)}</TableCell>
-                    <TableCell>{sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-BR') : '-'}</TableCell>
+                    <TableCell className="font-medium">{sale.event_name || '-'}</TableCell>
+                    <TableCell>{sale.stand_name || '-'}</TableCell>
+                    <TableCell>{sale.user_name || sale.user_email || '-'}</TableCell>
+                    <TableCell className="text-right font-mono">{formatCurrency(sale.amount)}</TableCell>
+                    <TableCell>{sale.created_at ? new Date(sale.created_at).toLocaleDateString('pt-BR') : '-'}</TableCell>
                   </TableRow>
                 ))
               ) : (
@@ -295,6 +480,92 @@ const OrganizerFinances = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Pagamentos Pendentes de Stands */}
+      {pendingStandPayments.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-6 w-6 text-orange-500" />
+              <div>
+                <CardTitle>Pagamentos Pendentes de Stands</CardTitle>
+                <CardDescription>Stands com pagamentos aguardando confirmação ou análise.</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Evento</TableHead>
+                  <TableHead>Stand</TableHead>
+                  <TableHead>Participante</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingStandPayments.map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell className="font-medium">
+                      {payment.events?.name || '-'}
+                    </TableCell>
+                    <TableCell>{payment.event_stands?.name || '-'}</TableCell>
+                    <TableCell>
+                      {payment.users?.name || payment.users?.email || '-'}
+                    </TableCell>
+                    <TableCell className="font-mono">
+                      {formatCurrency(payment.amount)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={payment.status === 'em_analise' ? 'default' : 'secondary'}>
+                        {payment.status === 'em_analise' ? 'Em Análise' : 'Pendente'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(payment.created_at).toLocaleDateString('pt-BR')}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {payment.payment_receipt_url && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => window.open(payment.payment_receipt_url, '_blank')}
+                          >
+                            Ver Comprovante
+                          </Button>
+                        )}
+                        {payment.status === 'em_analise' && (
+                          <>
+                            <Button 
+                              size="sm" 
+                              variant="default"
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => handleApprovePayment(payment.id)}
+                            >
+                              Aprovar
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => handleRejectPayment(payment.id)}
+                            >
+                              Rejeitar
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </motion.div>
   );
 };

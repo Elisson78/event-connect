@@ -337,15 +337,58 @@ export const EventProvider = ({ children }) => {
   // Função para buscar stands de um evento
   const getEventStands = async (eventId) => {
     if (!eventId) return [];
-    const { data, error } = await supabase
-      .from('event_stands')
-      .select('*')
-      .eq('event_id', eventId);
-    if (error) {
-      console.error('Erro ao buscar stands:', error);
+    
+    try {
+      // Buscar stands com informações de pagamento
+      const { data: standsData, error: standsError } = await supabase
+        .from('event_stands')
+        .select(`
+          *,
+          stand_payments!left(
+            id,
+            status,
+            amount,
+            payment_receipt_url,
+            created_at
+          )
+        `)
+        .eq('event_id', eventId)
+        .order('created_at', { foreignTable: 'stand_payments', ascending: false });
+        
+      if (standsError) {
+        console.error('Erro ao buscar stands:', standsError);
+        return [];
+      }
+      
+      // Processar os dados para incluir informações de pagamento
+      const processedStands = (standsData || []).map(stand => {
+        // Pegar o pagamento mais recente (se houver)
+        const payments = stand.stand_payments || [];
+        const latestPayment = payments.length > 0 ? payments[0] : null;
+        
+        console.log(`Stand ${stand.name}:`, {
+          stand_status: stand.status,
+          payments_count: payments.length,
+          latest_payment_status: latestPayment?.status,
+          latest_payment_created: latestPayment?.created_at
+        });
+        
+        return {
+          ...stand,
+          payment_status: latestPayment?.status || null,
+          payment_amount: latestPayment?.amount || null,
+          payment_receipt_url: latestPayment?.payment_receipt_url || null,
+          payment_created_at: latestPayment?.created_at || null,
+          // Se há pagamento aprovado, atualizar status do stand
+          status: latestPayment?.status === 'pago' ? 'vendido' : stand.status
+        };
+      });
+      
+      return processedStands;
+    } catch (error) {
+      console.error('Erro geral ao buscar stands:', error);
       return [];
     }
-    return data || [];
   };
 
   const value = {

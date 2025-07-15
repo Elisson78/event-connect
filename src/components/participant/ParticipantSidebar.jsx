@@ -74,6 +74,12 @@ const ParticipantSidebar = ({ isOpen, onClose }) => {
               <span className="icon">💰</span> Financeiro
             </Link>
           </li>
+          <li>
+            <a href="/participant/dashboard/stands" className="flex items-center gap-3 px-4 py-2 rounded hover:bg-blue-100 transition-colors">
+              <span role="img" aria-label="Stands">🏢</span>
+              <span>Stands</span>
+            </a>
+          </li>
         </nav>
 
         <div className="mt-auto">

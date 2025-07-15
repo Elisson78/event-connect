@@ -362,6 +362,7 @@ const OrganizerOverview = () => {
     setStandsLoading(true);
     try {
       const standsData = await getEventStands(eventId);
+      console.log('Stands carregados com pagamentos:', standsData);
       setStands(standsData);
     } catch (error) {
       console.error('Erro ao buscar stands:', error);
@@ -375,14 +376,55 @@ const OrganizerOverview = () => {
     setIsSubmitting(true);
     try {
       for (const stand of stands) {
+        // Atualizar o status do stand
         await supabase
           .from('event_stands')
           .update({
             status: stand.status,
             reserved_by: stand.reserved_by || null,
-            payment_status: stand.status === 'vendido' ? 'pago' : stand.payment_status || null,
           })
           .eq('id', stand.id);
+
+        // Se o status foi mudado para "vendido", atualizar o pagamento para "pago"
+        if (stand.status === 'vendido') {
+          // Buscar o pagamento mais recente deste stand
+          const { data: payments, error: paymentError } = await supabase
+            .from('stand_payments')
+            .select('id, status')
+            .eq('stand_id', stand.id)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (!paymentError && payments && payments.length > 0) {
+            const latestPayment = payments[0];
+            // Atualizar o status do pagamento para "pago"
+            await supabase
+              .from('stand_payments')
+              .update({ status: 'pago' })
+              .eq('id', latestPayment.id);
+          }
+        }
+        // Se o status foi mudado para "reservado", atualizar o pagamento para "em_analise"
+        else if (stand.status === 'reservado') {
+          // Buscar o pagamento mais recente deste stand
+          const { data: payments, error: paymentError } = await supabase
+            .from('stand_payments')
+            .select('id, status')
+            .eq('stand_id', stand.id)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (!paymentError && payments && payments.length > 0) {
+            const latestPayment = payments[0];
+            // Atualizar o status do pagamento para "em_analise" se estava "pago"
+            if (latestPayment.status === 'pago') {
+              await supabase
+                .from('stand_payments')
+                .update({ status: 'em_analise' })
+                .eq('id', latestPayment.id);
+            }
+          }
+        }
       }
       toast({ title: 'Status dos stands atualizado!', variant: 'success' });
       // Atualiza lista após salvar

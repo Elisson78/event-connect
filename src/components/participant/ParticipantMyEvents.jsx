@@ -318,7 +318,7 @@ const ParticipantMyEvents = () => {
         case 'pending_approval':
           return <Button variant="secondary" size="sm">Ver detalhes</Button>;
         case 'confirmed':
-          return <Button variant="success" size="sm">Baixar comprovante</Button>;
+          return <Button variant="default" size="sm" className="bg-green-600 hover:bg-green-700 text-white">Baixar comprovante</Button>;
         case 'rejected':
           return <Button variant="destructive" size="sm">Ver motivo</Button>;
         case 'cancelled':
@@ -483,9 +483,9 @@ const ParticipantMyEvents = () => {
                     )}
                     {stand.status === 'reservado' && stand.reserved_by === profile?.id && stand.payment_status !== 'pago' && (
                       <Button
-                        className="ml-4"
+                        className="ml-4 bg-green-600 hover:bg-green-700 text-white"
                         size="sm"
-                        variant="success"
+                        variant="default"
                         onClick={() => handleOpenPayModal(stand)}
                         disabled={stand.payment_status === 'em_analise'}
                       >
@@ -552,7 +552,7 @@ const ParticipantMyEvents = () => {
                     <div className="text-xs text-gray-500">Prazo para pagamento: {payment.expires_at ? new Date(payment.expires_at).toLocaleString('pt-BR') : '-'}</div>
                   </div>
                   <div className="flex flex-col gap-2 min-w-[180px]">
-                    <Button size="sm" variant="success" onClick={() => setSelectedStandPayment(payment)}>Enviar Comprovante</Button>
+                    <Button size="sm" variant="default" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => setSelectedStandPayment(payment)}>Enviar Comprovante</Button>
                   </div>
                 </li>
               ))}
