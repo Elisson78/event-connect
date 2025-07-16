@@ -6,6 +6,7 @@ import { supabase } from '@/lib/customSupabaseClient';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { EventProvider } from '@/contexts/EventContext';
 import { ProfileProvider } from '@/contexts/ProfileContext';
+import { SettingsProvider } from '@/contexts/SettingsContext';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
@@ -118,7 +119,8 @@ function App() {
     <AuthProvider>
       <ProfileProvider>
         <EventProvider>
-          <Router>
+          <SettingsProvider>
+            <Router>
             <PageTitleUpdater />
             <div className="min-h-screen bg-gray-50">
               <Routes>
@@ -182,6 +184,7 @@ function App() {
               <FooterInstallApp />
             </div>
           </Router>
+          </SettingsProvider>
         </EventProvider>
       </ProfileProvider>
     </AuthProvider>

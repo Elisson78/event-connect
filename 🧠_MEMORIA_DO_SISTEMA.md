@@ -134,6 +134,19 @@ const { data: standsSummary } = await supabase.rpc('get_organizer_stands_summary
   - Status de stands e pagamentos sempre alinhados
   - **SINCRONIZAÇÃO AUTOMÁTICA IMPLEMENTADA**: Mudança de status do stand automaticamente atualiza status do pagamento
   - **DEPLOY READY**: Sistema completo e testado para produção
+- **[2024-12] FEED RSS DE EVENTOS EXTERNOS IMPLEMENTADO:**
+  - Componente `ExternalEventsFeed.jsx` criado para exibir eventos externos
+  - Parser RSS (`rssParser.js`) para processar feeds XML
+  - Integração na página de Eventos com design responsivo
+  - Categorização automática de eventos (Meio Ambiente, Exposição, Formação, etc.)
+  - Botão de atualização para buscar novos eventos
+  - Dados mockados do Canton de Genève para demonstração
+  - **CONTROLE ADMIN IMPLEMENTADO:**
+    - Contexto `SettingsContext.jsx` para gerenciar configurações
+    - Configurações no painel admin para ativar/desativar RSS
+    - Configuração de URL do feed e número máximo de eventos
+    - Script SQL `adicionar_configuracao_rss.sql` para adicionar configurações
+    - RSS ativado por padrão para visualização imediata
 
 ---
 

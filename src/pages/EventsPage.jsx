@@ -6,6 +6,7 @@ import { Search, Filter, Calendar, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import EventCard from '@/components/EventCard';
+import ExternalEventsFeed from '@/components/ExternalEventsFeed';
 import { useEvents } from '@/contexts/EventContext';
 
 const EventCardSkeleton = () => (
@@ -167,6 +168,16 @@ const EventsPage = () => {
             </p>
           </motion.div>
         )}
+
+        {/* Seção de Eventos Externos */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="mt-16"
+        >
+          <ExternalEventsFeed />
+        </motion.div>
       </div>
     </div>
   );
