@@ -17,6 +17,7 @@ export const SettingsProvider = ({ children }) => {
 
   const fetchSettings = async () => {
     try {
+      console.log('SettingsContext - Buscando configurações...');
       const { data, error } = await supabase
         .from('site_settings')
         .select('*')
@@ -24,22 +25,28 @@ export const SettingsProvider = ({ children }) => {
 
       if (error) throw error;
 
+      console.log('SettingsContext - Dados recebidos:', data);
+
       const settingsMap = data.reduce((acc, setting) => {
         acc[setting.setting_key] = setting.setting_value;
         return acc;
       }, {});
 
+      console.log('SettingsContext - Settings map:', settingsMap);
       setSettings(settingsMap);
     } catch (error) {
       console.error('Error fetching settings:', error);
       // Usar configurações padrão em caso de erro
-      setSettings({
+      const defaultSettings = {
         rss_feed_enabled: 'true',
         rss_feed_url: 'https://www.ge.ch/feed/evenements',
         rss_feed_max_events: '10'
-      });
+      };
+      console.log('SettingsContext - Usando configurações padrão:', defaultSettings);
+      setSettings(defaultSettings);
     } finally {
       setLoading(false);
+      console.log('SettingsContext - Carregamento finalizado');
     }
   };
 
@@ -52,15 +59,21 @@ export const SettingsProvider = ({ children }) => {
   };
 
   const isRSSEnabled = () => {
-    return getSetting('rss_feed_enabled', 'true') === 'true';
+    const enabled = getSetting('rss_feed_enabled', 'true') === 'true';
+    console.log('SettingsContext - isRSSEnabled:', enabled);
+    return enabled;
   };
 
   const getRSSUrl = () => {
-    return getSetting('rss_feed_url', 'https://www.ge.ch/feed/evenements');
+    const url = getSetting('rss_feed_url', 'https://www.ge.ch/feed/evenements');
+    console.log('SettingsContext - getRSSUrl:', url);
+    return url;
   };
 
   const getRSSMaxEvents = () => {
-    return parseInt(getSetting('rss_feed_max_events', '10'));
+    const maxEvents = parseInt(getSetting('rss_feed_max_events', '10'));
+    console.log('SettingsContext - getRSSMaxEvents:', maxEvents);
+    return maxEvents;
   };
 
   const value = {

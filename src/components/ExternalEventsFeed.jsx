@@ -13,7 +13,13 @@ const ExternalEventsFeed = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Debug logs
+  console.log('ExternalEventsFeed - isRSSEnabled:', isRSSEnabled());
+  console.log('ExternalEventsFeed - getRSSUrl:', getRSSUrl());
+  console.log('ExternalEventsFeed - getRSSMaxEvents:', getRSSMaxEvents());
+
   useEffect(() => {
+    console.log('ExternalEventsFeed - useEffect triggered, isRSSEnabled:', isRSSEnabled());
     if (isRSSEnabled()) {
       fetchExternalEvents();
     } else {
@@ -24,12 +30,16 @@ const ExternalEventsFeed = () => {
 
   const fetchExternalEvents = async () => {
     try {
+      console.log('ExternalEventsFeed - fetchExternalEvents iniciado');
       setLoading(true);
       setError(null);
       
       // URL do RSS feed das configurações
       const rssUrl = getRSSUrl();
       const maxEvents = getRSSMaxEvents();
+      
+      console.log('ExternalEventsFeed - rssUrl:', rssUrl);
+      console.log('ExternalEventsFeed - maxEvents:', maxEvents);
       
       // Em produção, você pode usar o RSS real
       // const result = await fetchRSSFeed(rssUrl);
@@ -84,12 +94,14 @@ const ExternalEventsFeed = () => {
 
       // Limitar o número de eventos conforme configuração
       const limitedEvents = mockEvents.slice(0, maxEvents);
+      console.log('ExternalEventsFeed - limitedEvents:', limitedEvents);
       setEvents(limitedEvents);
     } catch (err) {
       setError('Erro ao carregar eventos externos');
       console.error('Erro ao buscar eventos externos:', err);
     } finally {
       setLoading(false);
+      console.log('ExternalEventsFeed - fetchExternalEvents finalizado');
     }
   };
 
@@ -113,8 +125,11 @@ const ExternalEventsFeed = () => {
 
   // Se RSS está desabilitado, não mostrar nada
   if (!isRSSEnabled()) {
+    console.log('ExternalEventsFeed - RSS desabilitado, retornando null');
     return null;
   }
+
+  console.log('ExternalEventsFeed - Renderizando componente, loading:', loading, 'events:', events.length, 'error:', error);
 
   if (loading) {
     return (
