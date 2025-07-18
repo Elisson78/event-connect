@@ -6,8 +6,10 @@ import { Calendar, MapPin, ExternalLink, Globe, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fetchRSSFeed } from '@/lib/rssParser';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const ExternalEventsFeed = () => {
+  const { t } = useTranslation('common');
   const { isRSSEnabled, getRSSUrl, getRSSMaxEvents } = useSettings();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -97,7 +99,7 @@ const ExternalEventsFeed = () => {
       console.log('ExternalEventsFeed - limitedEvents:', limitedEvents);
       setEvents(limitedEvents);
     } catch (err) {
-      setError('Erro ao carregar eventos externos');
+      setError(t('error_loading_external_events'));
       console.error('Erro ao buscar eventos externos:', err);
     } finally {
       setLoading(false);
@@ -154,11 +156,11 @@ const ExternalEventsFeed = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Globe className="h-5 w-5 text-orange-500" />
-          <h2 className="text-xl font-semibold text-gray-800">Eventos Externos</h2>
+          <h2 className="text-xl font-semibold text-gray-800">{t('external_events')}</h2>
         </div>
         <div className="flex items-center space-x-3">
           <Badge variant="outline" className="text-xs">
-            {events.length} eventos encontrados
+            {t('events_found', { count: events.length })}
           </Badge>
           <Button
             size="sm"
@@ -168,7 +170,7 @@ const ExternalEventsFeed = () => {
             className="text-orange-600 border-orange-200 hover:bg-orange-50"
           >
             <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-            Atualizar
+            {t('refresh')}
           </Button>
         </div>
       </div>
@@ -225,7 +227,7 @@ const ExternalEventsFeed = () => {
 
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-400">
-                    Fonte: {event.source}
+                    {t('source')}: {event.source}
                   </span>
                   
                   <Button
@@ -235,7 +237,7 @@ const ExternalEventsFeed = () => {
                     className="text-orange-600 border-orange-200 hover:bg-orange-50"
                   >
                     <ExternalLink className="h-4 w-4 mr-1" />
-                    Ver evento
+                    {t('view_event')}
                   </Button>
                 </div>
               </CardContent>
@@ -248,7 +250,7 @@ const ExternalEventsFeed = () => {
         <Card className="bg-gray-50">
           <CardContent className="p-8 text-center">
             <Globe className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">Nenhum evento externo disponível no momento.</p>
+            <p className="text-gray-500">{t('no_external_events')}</p>
           </CardContent>
         </Card>
       )}

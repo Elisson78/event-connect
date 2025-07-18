@@ -17,8 +17,10 @@ import {
   Database
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const AdminSidebar = ({ onNavigate, onOpenSettings }) => {
+  const { t } = useTranslation('common');
   const [activeSection, setActiveSection] = React.useState('dashboard');
 
   const handleNavigation = (section) => {
@@ -27,20 +29,20 @@ const AdminSidebar = ({ onNavigate, onOpenSettings }) => {
   };
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'users', label: 'Usuários', icon: Users },
-    { id: 'roles', label: 'Funções', icon: Shield },
-    { id: 'organizers', label: 'Organizadores', icon: Building2 },
-    { id: 'plans', label: 'Planos', icon: CreditCard },
-    { id: 'platform_fees', label: 'Taxas', icon: DollarSign },
-    { id: 'payments', label: 'Pagamentos', icon: CreditCard },
-    { id: 'manual_payments', label: 'Confirmações', icon: CheckSquare },
-    { id: 'event-types', label: 'Tipos de Evento', icon: Calendar },
-    { id: 'pages', label: 'Páginas', icon: FileText },
-    { id: 'marketplace', label: 'Mercado', icon: Store },
-    { id: 'cardSettings', label: 'Cards', icon: Palette },
-    { id: 'backup', label: 'Backup', icon: Database },
-    { id: 'settings', label: 'Configurações', icon: Settings },
+    { id: 'dashboard', label: t('admin_dashboard'), icon: LayoutDashboard },
+    { id: 'users', label: t('users'), icon: Users },
+    { id: 'roles', label: t('admin_roles'), icon: Shield },
+    { id: 'organizers', label: t('organizers'), icon: Building2 },
+    { id: 'plans', label: t('plans'), icon: CreditCard },
+    { id: 'platform_fees', label: t('taxes'), icon: DollarSign },
+    { id: 'payments', label: t('admin_payments'), icon: CreditCard },
+    { id: 'manual_payments', label: t('confirmations'), icon: CheckSquare },
+    { id: 'event-types', label: t('event_types'), icon: Calendar },
+    { id: 'pages', label: t('pages'), icon: FileText },
+    { id: 'marketplace', label: t('market'), icon: Store },
+    { id: 'cardSettings', label: t('cards'), icon: Palette },
+    { id: 'backup', label: t('backup'), icon: Database },
+    { id: 'settings', label: t('configurations'), icon: Settings },
   ];
 
   return (
@@ -51,7 +53,7 @@ const AdminSidebar = ({ onNavigate, onOpenSettings }) => {
       className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white border-r border-gray-200 overflow-y-auto z-30"
     >
       <div className="p-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Administração</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('administration')}</h2>
         <nav className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;

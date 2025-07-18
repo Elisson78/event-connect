@@ -25,8 +25,8 @@ const LoginPage = () => {
   useEffect(() => {
     if (!profileLoading && profile) {
       toast({
-        title: t('login_success_title'),
-        description: t('login_success_desc', { name: profile.name || profile.email }),
+              title: t('login.successTitle'),
+      description: t('login.successDesc', { name: profile.name || profile.email }),
         className: "bg-green-100 border-green-400 text-green-700",
       });
 
@@ -53,15 +53,15 @@ const LoginPage = () => {
       await login(email, password);
     } catch (error) {
       console.error("Login error:", error);
-      let errorMessage = t('login_error_invalid_credentials');
+      let errorMessage = t('login.errorInvalidCredentials');
       if (error.message.toLowerCase().includes('email not confirmed')) {
-        errorMessage = t('login_error_email_not_confirmed');
+        errorMessage = t('login.errorEmailNotConfirmed');
       } else if (error.message.toLowerCase().includes('invalid login credentials')) {
-        errorMessage = t('login_error_invalid_credentials');
+        errorMessage = t('login.errorInvalidCredentials');
       }
       
       toast({
-        title: t('login_error_title'),
+        title: t('login.errorTitle'),
         description: errorMessage,
         variant: "destructive"
       });
@@ -83,7 +83,7 @@ const LoginPage = () => {
           className="inline-flex items-center text-gray-600 hover:text-blue-600 mb-6 transition-colors group"
         >
           <ArrowLeft className="h-4 w-4 mr-2 transition-transform group-hover:-translate-x-1" />
-          {t('back_to_home')}
+          {t('backToHome')}
         </Link>
         <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm overflow-hidden">
           <CardHeader className="text-center p-8 bg-gray-50/50">
@@ -98,23 +98,23 @@ const LoginPage = () => {
               </div>
             </motion.div>
             <CardTitle className="text-3xl font-bold text-gray-800">
-              {t('login_title')}
+              {t('login.title')}
             </CardTitle>
             <CardDescription className="text-gray-500 pt-1">
-              {t('login_welcome')} <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-orange-500">EventiConnect</span>!
+              {t('login.welcome')} <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-orange-500">EventiConnect</span>!
             </CardDescription>
           </CardHeader>
 
           <CardContent className="p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email">{t('email')}</Label>
+                <Label htmlFor="email">{t('login.email')}</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     id="email"
                     type="email"
-                    placeholder={t('email_placeholder')}
+                    placeholder={t('login.emailPlaceholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -124,13 +124,13 @@ const LoginPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">{t('password')}</Label>
+                <Label htmlFor="password">{t('login.password')}</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     id="password"
                     type="password"
-                    placeholder={t('password_placeholder')}
+                    placeholder={t('login.passwordPlaceholder')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -145,18 +145,18 @@ const LoginPage = () => {
                 className="w-full h-11 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white"
               >
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {isSubmitting ? t('logging_in') : t('login')}
+                {isSubmitting ? t('login.loggingIn') : t('login.title')}
               </Button>
             </form>
 
             <div className="mt-6 text-center text-sm">
               <p className="text-gray-600">
-                {t('no_account')}{' '}
+                {t('login.noAccount')}{' '}
                 <Link 
                   to="/register" 
                   className="font-semibold text-blue-600 hover:underline"
                 >
-                  {t('sign_up')}
+                  {t('login.signUp')}
                 </Link>
               </p>
             </div>

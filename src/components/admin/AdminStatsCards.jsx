@@ -1,15 +1,17 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Calendar, BarChart3, Shield } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const AdminStatsCards = ({ stats }) => {
+  const { t } = useTranslation('common');
   const { totalUsers, newUsersThisWeek, totalEvents, activeEvents, totalParticipations, totalOrganizers } = stats;
   
   const statCards = [
-    { title: "Total de Usuários", value: totalUsers, icon: Users, subtext: `+${newUsersThisWeek} esta semana`, color: "blue" },
-    { title: "Total de Eventos", value: totalEvents, icon: Calendar, subtext: `${activeEvents} ativos`, color: "orange" },
-    { title: "Participações", value: totalParticipations, icon: BarChart3, subtext: "Total de inscrições", color: "green" },
-    { title: "Organizadores", value: totalOrganizers, icon: Shield, subtext: "Usuários ativos", color: "purple" },
+    { title: t('total_users'), value: totalUsers, icon: Users, subtext: t('new_users_this_week', { count: newUsersThisWeek }), color: "blue" },
+    { title: t('total_events'), value: totalEvents, icon: Calendar, subtext: t('active_events', { count: activeEvents }), color: "orange" },
+    { title: t('participations'), value: totalParticipations, icon: BarChart3, subtext: t('total_registrations'), color: "green" },
+    { title: t('organizers'), value: totalOrganizers, icon: Shield, subtext: t('active_users'), color: "purple" },
   ];
 
   const iconColorClass = {

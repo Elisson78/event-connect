@@ -11,8 +11,10 @@ import { Switch } from '@/components/ui/switch';
 import { Plus, Edit, Trash2, Eye, Link as LinkIcon, Loader2, Save, Shield, ShieldOff, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const AdminPagesManagement = () => {
+  const { t } = useTranslation('common');
   const { toast } = useToast();
   const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +37,7 @@ const AdminPagesManagement = () => {
       if (error) throw error;
       setPages(data);
     } catch (error) {
-      toast({ title: 'Erro ao buscar páginas', description: error.message, variant: 'destructive' });
+      toast({ title: t('error_fetching_pages'), description: error.message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -84,30 +86,30 @@ const AdminPagesManagement = () => {
       if (editingPage) {
         const { error } = await supabase.from('pages').update(payload).eq('id', editingPage.id);
         if (error) throw error;
-        toast({ title: 'Página atualizada!', description: `A página "${payload.title}" foi salva.` });
+        toast({ title: t('page_updated'), description: t('page_saved', { title: payload.title }) });
       } else {
         const { error } = await supabase.from('pages').insert(payload);
         if (error) throw error;
-        toast({ title: 'Página criada!', description: `A página "${payload.title}" foi criada com sucesso.` });
+        toast({ title: t('page_created'), description: t('page_created_success', { title: payload.title }) });
       }
       setIsDialogOpen(false);
       fetchPages();
     } catch (error) {
-      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+      toast({ title: t('error_saving_page'), description: error.message, variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (pageId, pageTitle) => {
-    if (!window.confirm(`Tem certeza que deseja excluir a página "${pageTitle}"?`)) return;
+    if (!window.confirm(t('confirm_delete_page', { title: pageTitle }))) return;
     try {
       const { error } = await supabase.from('pages').delete().eq('id', pageId);
       if (error) throw error;
-      toast({ title: 'Página excluída!', description: `A página "${pageTitle}" foi removida.` });
+      toast({ title: t('page_deleted'), description: t('page_deleted_success', { title: pageTitle }) });
       fetchPages();
     } catch (error) {
-      toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
+      toast({ title: t('error_deleting_page'), description: error.message, variant: 'destructive' });
     }
   };
   
@@ -115,10 +117,10 @@ const AdminPagesManagement = () => {
     <Card className="shadow-lg">
       <CardHeader className="flex flex-row justify-between items-center">
         <div>
-          <CardTitle>Gerenciar Páginas</CardTitle>
-          <CardDescription>Crie, edite e gerencie as páginas do seu site.</CardDescription>
+          <CardTitle>{t('manage_pages')}</CardTitle>
+          <CardDescription>{t('manage_pages_desc')}</CardDescription>
         </div>
-        <Button onClick={() => handleOpenDialog()}><Plus className="mr-2 h-4 w-4" /> Nova Página</Button>
+        <Button onClick={() => handleOpenDialog()}><Plus className="mr-2 h-4 w-4" /> {t('new_page')}</Button>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -134,7 +136,7 @@ const AdminPagesManagement = () => {
               >
                 <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
                   <div className="flex items-center space-x-4">
-                    {page.is_published ? <Globe className="h-5 w-5 text-green-500" title="Publicada"/> : <Eye className="h-5 w-5 text-gray-400" title="Rascunho"/>}
+                    {page.is_published ? <Globe className="h-5 w-5 text-green-500" title={t('published')}/> : <Eye className="h-5 w-5 text-gray-400" title={t('draft')}/>}
                     <div>
                       <p className="font-semibold">{page.title}</p>
                       <div className="flex items-center space-x-1 text-sm text-gray-500">
@@ -145,7 +147,7 @@ const AdminPagesManagement = () => {
                   </div>
                   <div className="flex items-center space-x-2">
                     {page.is_system_page ? (
-                        <span className="flex items-center text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full"><Shield className="h-3 w-3 mr-1"/> Sistema</span>
+                        <span className="flex items-center text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full"><Shield className="h-3 w-3 mr-1"/> {t('system')}</span>
                     ) : (
                        <Link to={`/p/${page.slug}`} target="_blank"><Button variant="outline" size="icon"><Eye className="h-4 w-4"/></Button></Link>
                     )}
@@ -166,30 +168,30 @@ const AdminPagesManagement = () => {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{editingPage ? 'Editar Página' : 'Criar Nova Página'}</DialogTitle>
+            <DialogTitle>{editingPage ? t('edit_page') : t('create_new_page')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Título da Página</Label>
+              <Label htmlFor="title">{t('page_title')}</Label>
               <Input id="title" value={formData.title} onChange={e => handleFormChange('title', e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="slug">URL (slug)</Label>
-              <Input id="slug" value={formData.slug} onChange={e => handleFormChange('slug', e.target.value)} required placeholder="ex: sobre-nos"/>
+              <Label htmlFor="slug">{t('url_slug')}</Label>
+              <Input id="slug" value={formData.slug} onChange={e => handleFormChange('slug', e.target.value)} required placeholder={t('url_slug_placeholder')}/>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="content">Conteúdo</Label>
-              <Textarea id="content" value={formData.content.body} onChange={e => handleFormChange('content', e.target.value)} rows={10} placeholder="Escreva o conteúdo da página aqui..."/>
+              <Label htmlFor="content">{t('content')}</Label>
+              <Textarea id="content" value={formData.content.body} onChange={e => handleFormChange('content', e.target.value)} rows={10} placeholder={t('content_placeholder')}/>
             </div>
             <div className="flex items-center space-x-2">
               <Switch id="is_published" checked={formData.is_published} onCheckedChange={checked => handleFormChange('is_published', checked)} />
-              <Label htmlFor="is_published">Publicar página</Label>
+              <Label htmlFor="is_published">{t('publish_page')}</Label>
             </div>
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>{t('cancel')}</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
-                Salvar
+                {t('save')}
               </Button>
             </div>
           </form>

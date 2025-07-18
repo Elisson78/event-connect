@@ -1,12 +1,14 @@
 import React from 'react';
 import { NavLink, useNavigate, Link, useLocation } from 'react-router-dom';
 import { Home, CalendarCheck, UserCircle, LogOut, Trophy, Award } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/contexts/ProfileContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const ParticipantSidebar = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
   const { signOut } = useAuth();
   const { profile: user } = useProfile();
   const navigate = useNavigate();
@@ -31,11 +33,11 @@ const ParticipantSidebar = ({ isOpen, onClose }) => {
   };
 
   const navItems = [
-    { name: 'Visão Geral', path: '/participant/dashboard', icon: Home },
-    { name: 'Meus Eventos', path: 'my-events', icon: CalendarCheck },
-    { name: 'Sorteio', path: 'prizes', icon: Trophy },
-    { name: 'Documentos', path: 'documents', icon: Award },
-    { name: 'Meu Perfil', path: 'profile', icon: UserCircle },
+    { name: t('participant.overview') || 'Visão Geral', path: '/participant/dashboard', icon: Home },
+    { name: t('participant.myEvents') || 'Meus Eventos', path: 'my-events', icon: CalendarCheck },
+    { name: t('participant.prizes') || 'Prêmios', path: 'prizes', icon: Trophy },
+    { name: t('participant.documents') || 'Documentos', path: 'documents', icon: Award },
+    { name: t('participant.profile') || 'Perfil', path: 'profile', icon: UserCircle },
   ];
 
   return (
@@ -69,17 +71,18 @@ const ParticipantSidebar = ({ isOpen, onClose }) => {
               <span>{item.name}</span>
             </NavLink>
           ))}
-          <li>
-            <Link to="/participant/dashboard/finances" className={location.pathname.includes('/participant/dashboard/finances') ? 'active' : ''}>
-              <span className="icon">💰</span> Financeiro
-            </Link>
-          </li>
-          <li>
-            <a href="/participant/dashboard/stands" className="flex items-center gap-3 px-4 py-2 rounded hover:bg-blue-100 transition-colors">
-              <span role="img" aria-label="Stands">🏢</span>
-              <span>Stands</span>
-            </a>
-          </li>
+          <NavLink
+            to="finances"
+            onClick={onClose}
+            className={({ isActive }) =>
+              `flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ease-in-out hover:bg-blue-600 hover:shadow-md ${
+                isActive ? 'bg-blue-800 shadow-inner' : 'hover:bg-opacity-75'
+              }`
+            }
+          >
+            <span className="text-xl">💰</span>
+            <span>{t('participant.finances') || 'Finanças'}</span>
+          </NavLink>
         </nav>
 
         <div className="mt-auto">
@@ -89,7 +92,7 @@ const ParticipantSidebar = ({ isOpen, onClose }) => {
             className="w-full flex items-center justify-start space-x-3 px-4 py-3 text-blue-100 hover:bg-red-500 hover:text-white rounded-lg transition-all"
           >
             <LogOut className="h-5 w-5" />
-            <span>Sair</span>
+            <span>{t('logout') || 'Sair'}</span>
           </Button>
           <p className="text-xs text-center text-blue-300 mt-4">
             EventiConnect © {new Date().getFullYear()}

@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import InstallPwaButton from './InstallPwaButton';
 import { useEvents } from '@/contexts/EventContext';
 import LanguageSelector from './LanguageSelector';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Navbar = () => {
   const { signOut } = useAuth();
@@ -16,7 +16,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { platformSettings } = useEvents();
-  const { t } = useTranslation('common');
+  const { t } = useLanguage();
 
   const handleLogout = async () => {
     await signOut();
@@ -40,7 +40,7 @@ const Navbar = () => {
   const navLinks = [
     { to: "/events", text: t('events') },
     { to: "/planos", text: t('plans'), icon: <PercentCircle className="h-4 w-4 mr-1.5" /> },
-    { to: "/para-organizadores", text: t('for_organizers'), icon: <Briefcase className="h-4 w-4 mr-1.5" /> },
+    { to: "/para-organizadores", text: t('forOrganizers'), icon: <Briefcase className="h-4 w-4 mr-1.5" /> },
   ];
 
   if (profile) {
@@ -94,7 +94,7 @@ const Navbar = () => {
               <div className="flex items-center space-x-3">
                 <Link to="/login">
                   <Button variant="outline" size="sm">
-                    {t('login')}
+                    {t('login_title')}
                   </Button>
                 </Link>
                 <Link to="/register">
@@ -140,6 +140,12 @@ const Navbar = () => {
               )}
             </div>
             <div className="pt-4 pb-3 border-t border-gray-200">
+              <div className="px-5 mb-3">
+                <div className="text-sm font-medium text-gray-700 mb-2">Idioma / Language</div>
+                <div className="bg-blue-50 p-2 rounded border border-blue-200">
+                  <LanguageSelector />
+                </div>
+              </div>
               {profile ? (
                 <div className="px-5">
                   <div className="flex items-center mb-3">
@@ -158,7 +164,7 @@ const Navbar = () => {
               ) : (
                 <div className="px-5 space-y-3">
                   <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full">{t('login')}</Button>
+                    <Button variant="outline" className="w-full">{t('login_title')}</Button>
                   </Link>
                   <Link to="/register" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button className="w-full btn-primary text-white">{t('register')}</Button>

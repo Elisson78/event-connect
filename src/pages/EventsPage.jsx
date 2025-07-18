@@ -8,6 +8,7 @@ import Navbar from '@/components/Navbar';
 import EventCard from '@/components/EventCard';
 import ExternalEventsFeed from '@/components/ExternalEventsFeed';
 import { useEvents } from '@/contexts/EventContext';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const EventCardSkeleton = () => (
   <div className="border rounded-lg p-4 space-y-3 animate-pulse bg-white shadow-md">
@@ -25,6 +26,7 @@ const EventCardSkeleton = () => (
 );
 
 const EventsPage = () => {
+  const { t } = useTranslation('common');
   const { events, loadingEvents, networkError, eventCategories, loadingEventCategories } = useEvents();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('');
@@ -61,10 +63,10 @@ const EventsPage = () => {
           className="text-center mb-12"
         >
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Explore <span className="text-gradient">Eventos</span>
+            {t('events_page_title')}
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Descubra eventos incríveis acontecendo perto de você
+            {t('events_page_subtitle')}
           </p>
         </motion.div>
 
@@ -78,7 +80,7 @@ const EventsPage = () => {
             <div className="relative">
               <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
               <Input
-                placeholder="Buscar eventos..."
+                placeholder={t('search_events_placeholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 h-12"
@@ -87,12 +89,12 @@ const EventsPage = () => {
             
             <Select value={selectedType || 'all-types'} onValueChange={handleTypeChange}>
               <SelectTrigger className="h-12">
-                <SelectValue placeholder="Tipo de evento" />
+                <SelectValue placeholder={t('event_type_placeholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all-types">Todos os tipos</SelectItem>
+                <SelectItem value="all-types">{t('all_types')}</SelectItem>
                 {loadingEventCategories ? (
-                  <SelectItem value="loading" disabled>Carregando...</SelectItem>
+                  <SelectItem value="loading" disabled>{t('loading')}</SelectItem>
                 ) : (
                   eventCategories.map(cat => (
                     <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
@@ -103,10 +105,10 @@ const EventsPage = () => {
 
             <Select value={selectedLocation || 'all-locations'} onValueChange={handleLocationChange}>
               <SelectTrigger className="h-12">
-                <SelectValue placeholder="Localização" />
+                <SelectValue placeholder={t('location_placeholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all-locations">Todas as cidades</SelectItem>
+                <SelectItem value="all-locations">{t('all_locations')}</SelectItem>
                 {locations.map(location => (
                   <SelectItem key={location} value={location}>{location}</SelectItem>
                 ))}
@@ -123,7 +125,7 @@ const EventsPage = () => {
               className="h-12"
             >
               <Filter className="h-4 w-4 mr-2" />
-              Limpar Filtros
+              {t('clear_filters')}
             </Button>
           </div>
         </motion.div>
@@ -148,8 +150,8 @@ const EventsPage = () => {
         {!loadingEvents && networkError && (
           <div className="col-span-full text-center py-16 text-red-600 bg-red-50 rounded-lg">
             <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
-            <p className="text-xl font-semibold">Ocorreu um erro ao carregar os eventos.</p>
-            <p>Por favor, verifique sua conexão e tente novamente.</p>
+            <p className="text-xl font-semibold">{t('error_loading_events_network')}</p>
+            <p>{t('error_loading_events_network_desc')}</p>
           </div>
         )}
 
@@ -161,10 +163,10 @@ const EventsPage = () => {
           >
             <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-2xl font-semibold text-gray-900 mb-2">
-              Nenhum evento encontrado
+              {t('no_events_found')}
             </h3>
             <p className="text-gray-600">
-              Tente ajustar os filtros ou buscar por outros termos
+              {t('no_events_found_desc')}
             </p>
           </motion.div>
         )}

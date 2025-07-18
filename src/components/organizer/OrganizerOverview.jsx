@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const initialFormData = {
   name: '',
@@ -33,6 +34,7 @@ const initialFormData = {
 };
 
 const OrganizerOverview = () => {
+  const { t } = useTranslation('common');
   const { profile: user } = useProfile();
   const { events, createEvent, updateEvent, deleteEvent, getEventRegistrations, loadingEvents, refetchEvents, allUsers, getEventStands } = useEvents();
   const { toast } = useToast();
@@ -77,7 +79,7 @@ const OrganizerOverview = () => {
 
   const createTestEvents = async () => {
     if (!user?.id) {
-      toast({ title: "Erro", description: "Usuário organizador não identificado corretamente.", variant: "destructive" });
+      toast({ title: t('error'), description: t('organizer_not_identified'), variant: "destructive" });
       return;
     }
     setIsSubmitting(true);
@@ -135,7 +137,7 @@ const OrganizerOverview = () => {
   const handleSubmitEvent = async (e, isEditing = false) => {
     e.preventDefault();
     if (!user?.id) {
-      toast({ title: "Erro", description: "Usuário organizador não identificado.", variant: "destructive" });
+      toast({ title: t('error'), description: t('organizer_not_identified_error'), variant: "destructive" });
       return;
     }
 
@@ -158,8 +160,8 @@ const OrganizerOverview = () => {
         console.log('max_participants:', !!formData.max_participants);
         
         toast({
-            title: "Campos Obrigatórios",
-            description: "Por favor, preencha todos os campos obrigatórios (Nome, Data/Hora de Início, Local, Máx. Participantes).",
+            title: t('required_fields'),
+            description: t('fill_required_fields'),
             variant: "destructive",
         });
         return;
@@ -167,8 +169,8 @@ const OrganizerOverview = () => {
 
     if (formData.end_date && formData.start_date > formData.end_date) {
         toast({
-            title: "Data Inválida",
-            description: "A data de término não pode ser anterior à data de início.",
+            title: t('invalid_date'),
+            description: t('end_date_before_start'),
             variant: "destructive",
         });
         return;
@@ -176,8 +178,8 @@ const OrganizerOverview = () => {
 
     if (formData.start_date === formData.end_date && formData.end_time && formData.start_time > formData.end_time) {
         toast({
-            title: "Horário Inválido",
-            description: "O horário de término não pode ser anterior ao horário de início no mesmo dia.",
+            title: t('invalid_time'),
+            description: t('end_time_before_start'),
             variant: "destructive",
         });
         return;
@@ -261,11 +263,11 @@ const OrganizerOverview = () => {
             }));
             const { error: standError } = await supabase.from('event_stands').insert(standRows);
             if (standError) {
-              toast({ title: "Erro ao salvar stands", description: standError.message, variant: "destructive" });
+              toast({ title: t('error_saving_stands'), description: standError.message, variant: "destructive" });
             }
           }
         }
-        toast({ title: "Evento atualizado!", description: `O evento "${formData.name}" foi atualizado.` });
+        toast({ title: t('event_updated'), description: t('event_updated_success', { name: formData.name }) });
         setIsEditDialogOpen(false);
       } else {
         const createdEvent = await createEvent(eventPayload);
@@ -280,10 +282,10 @@ const OrganizerOverview = () => {
           }));
           const { error: standError } = await supabase.from('event_stands').insert(standRows);
           if (standError) {
-            toast({ title: "Erro ao salvar stands", description: standError.message, variant: "destructive" });
+            toast({ title: t('error_saving_stands'), description: standError.message, variant: "destructive" });
           }
         }
-        toast({ title: "Evento criado!", description: "Seu evento foi salvo com sucesso." });
+        toast({ title: t('event_created'), description: t('event_created_success') });
         setIsCreateDialogOpen(false);
         resetForm();
         refetchEvents();
@@ -296,7 +298,7 @@ const OrganizerOverview = () => {
         details: error.details,
         hint: error.hint
       });
-      toast({ title: "Erro ao salvar evento", description: error.message, variant: "destructive" });
+      toast({ title: t('error_saving_event'), description: error.message, variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -305,10 +307,10 @@ const OrganizerOverview = () => {
   const handleDeleteEvent = async (eventId, eventName) => {
     try {
       await deleteEvent(eventId);
-      toast({ title: "Evento excluído", description: `O evento "${eventName}" foi excluído.` });
+      toast({ title: t('event_deleted'), description: t('event_deleted_success', { name: eventName }) });
     } catch (error) {
       console.error("Error deleting event:", error);
-      toast({ title: "Erro ao excluir evento", description: error.message, variant: "destructive" });
+      toast({ title: t('error_deleting_event'), description: error.message, variant: "destructive" });
     }
   };
 
@@ -366,7 +368,7 @@ const OrganizerOverview = () => {
       setStands(standsData);
     } catch (error) {
       console.error('Erro ao buscar stands:', error);
-      toast({ title: 'Erro ao carregar stands', description: error.message, variant: 'destructive' });
+      toast({ title: t('error_loading_stands'), description: error.message, variant: 'destructive' });
     } finally {
       setStandsLoading(false);
     }
@@ -426,11 +428,11 @@ const OrganizerOverview = () => {
           }
         }
       }
-      toast({ title: 'Status dos stands atualizado!', variant: 'success' });
+      toast({ title: t('stands_status_updated'), variant: 'success' });
       // Atualiza lista após salvar
       if (editingEvent?.id) await fetchStandsForEvent(editingEvent.id);
     } catch (e) {
-      toast({ title: 'Erro ao salvar alterações', description: e.message, variant: 'destructive' });
+      toast({ title: t('error_saving_changes'), description: e.message, variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
@@ -452,20 +454,20 @@ const OrganizerOverview = () => {
               <Dialog open={isCreateDialogOpen} onOpenChange={(isOpen) => { setIsCreateDialogOpen(isOpen); if (!isOpen) resetForm(); }}>
                 <DialogTrigger asChild>
                   <Button className="btn-primary text-white shadow-md hover:shadow-blue-500/40 transition-all duration-300">
-                    <Plus className="h-5 w-5 mr-2" />Criar Evento
+                    <Plus className="h-5 w-5 mr-2" />{t('create_event')}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-3xl max-h-[95vh] overflow-y-auto p-8 rounded-xl shadow-2xl">
                   <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold text-gray-800">Criar Novo Evento</DialogTitle>
-                    <DialogDescription className="text-gray-600">Preencha as informações detalhadas do seu novo evento.</DialogDescription>
+                    <DialogTitle className="text-2xl font-bold text-gray-800">{t('create_new_event')}</DialogTitle>
+                    <DialogDescription className="text-gray-600">{t('fill_event_details')}</DialogDescription>
                   </DialogHeader>
                   <OrganizerEventForm 
                     formData={formData} 
                     onInputChange={handleInputChange} 
                     onSubmit={(e) => handleSubmitEvent(e, false)} 
                     onCancel={() => { setIsCreateDialogOpen(false); resetForm();}} 
-                    submitButtonText={isSubmitting ? "Criando..." : "Criar Evento"}
+                    submitButtonText={isSubmitting ? t('creating') : t('create_event')}
                     onStandsChange={setStands}
                   />
                 </DialogContent>
@@ -476,8 +478,8 @@ const OrganizerOverview = () => {
 
         <Card className="shadow-xl border-0 rounded-xl overflow-hidden">
         <CardHeader className="bg-white p-6 border-b border-gray-200">
-            <CardTitle className="text-xl font-semibold text-gray-800">Meus Eventos Criados</CardTitle>
-            <CardDescription className="text-gray-500">Acompanhe e gerencie todos os seus eventos.</CardDescription>
+            <CardTitle className="text-xl font-semibold text-gray-800">{t('my_created_events')}</CardTitle>
+            <CardDescription className="text-gray-500">{t('track_manage_events')}</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
             <OrganizerEventList 
@@ -493,14 +495,14 @@ const OrganizerOverview = () => {
         <Dialog open={isEditDialogOpen} onOpenChange={(isOpen) => { setIsEditDialogOpen(isOpen); if (!isOpen) resetForm(); }}>
         <DialogContent className="max-w-3xl max-h-[95vh] overflow-y-auto p-8 rounded-xl shadow-2xl">
             <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-gray-800">Editar Evento</DialogTitle>
-            <DialogDescription className="text-gray-600">Atualize as informações do seu evento.</DialogDescription>
+            <DialogTitle className="text-2xl font-bold text-gray-800">{t('edit_event')}</DialogTitle>
+            <DialogDescription className="text-gray-600">{t('update_event_info')}</DialogDescription>
             </DialogHeader>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="mb-4">
-                <TabsTrigger value="dados">Dados</TabsTrigger>
-                <TabsTrigger value="stands">Stands</TabsTrigger>
-                <TabsTrigger value="status-stands">Status dos Stands</TabsTrigger>
+                <TabsTrigger value="dados">{t('data_tab')}</TabsTrigger>
+                <TabsTrigger value="stands">{t('stands_tab')}</TabsTrigger>
+                <TabsTrigger value="status-stands">{t('stands_status_tab')}</TabsTrigger>
               </TabsList>
               <TabsContent value="dados">
             <OrganizerEventForm 
@@ -508,21 +510,21 @@ const OrganizerOverview = () => {
             onInputChange={handleInputChange} 
             onSubmit={(e) => handleSubmitEvent(e, true)} 
             onCancel={() => { setIsEditDialogOpen(false); resetForm();}} 
-            submitButtonText={isSubmitting ? "Salvando..." : "Salvar Alterações"}
+            submitButtonText={isSubmitting ? t('saving') : t('save_changes')}
                   stands={stands}
                   onStandsChange={setStands}
                 />
               </TabsContent>
               <TabsContent value="stands">
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-blue-900 text-lg mb-2">Gerenciar Stands</h3>
+                  <h3 className="font-semibold text-blue-900 text-lg mb-2">{t('manage_stands')}</h3>
                   <table className="min-w-full bg-white border rounded shadow text-sm">
                     <thead>
                       <tr>
-                        <th className="px-3 py-2 text-left">Nome</th>
-                        <th className="px-3 py-2 text-left">Descrição</th>
-                        <th className="px-3 py-2 text-left">Valor (R$)</th>
-                        <th className="px-3 py-2 text-left">Ações</th>
+                        <th className="px-3 py-2 text-left">{t('name')}</th>
+                        <th className="px-3 py-2 text-left">{t('description')}</th>
+                        <th className="px-3 py-2 text-left">{t('value_currency')}</th>
+                        <th className="px-3 py-2 text-left">{t('actions')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -568,18 +570,18 @@ const OrganizerOverview = () => {
                             <button type="button" className="bg-red-500 text-white px-2 py-1 rounded" onClick={() => {
                               const updated = stands.filter((_, i) => i !== idx);
                               setStands(updated);
-                            }}>Remover</button>
+                            }}>{t('remove')}</button>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                   <div className="flex gap-2 mt-4">
-                    <button type="button" className="bg-blue-500 text-white px-4 py-2 rounded" onClick={() => setStands([...stands, { name: '', description: '', price: '' }])}>Adicionar Stand</button>
+                    <button type="button" className="bg-blue-500 text-white px-4 py-2 rounded" onClick={() => setStands([...stands, { name: '', description: '', price: '' }])}>{t('add_stand')}</button>
                   </div>
                   <div className="flex justify-end mt-4">
                     <button type="button" className="bg-orange-600 text-white px-6 py-2 rounded" onClick={(e) => handleSubmitEvent(e, true)} disabled={isSubmitting}>
-                      {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+                      {isSubmitting ? t('saving') : t('save_changes')}
                     </button>
                   </div>
                 </div>
@@ -587,7 +589,7 @@ const OrganizerOverview = () => {
               <TabsContent value="status-stands">
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <h3 className="font-semibold text-blue-900 text-lg mb-2">Status dos Stands</h3>
+                    <h3 className="font-semibold text-blue-900 text-lg mb-2">{t('stands_status')}</h3>
                     <Button 
                       size="sm" 
                       variant="outline" 
@@ -595,44 +597,44 @@ const OrganizerOverview = () => {
                       disabled={standsLoading}
                     >
                       {standsLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-                      Atualizar
+                      {t('update')}
                     </Button>
                   </div>
                   {/* Painel financeiro */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                     <div className="bg-green-50 border border-green-200 rounded p-4 flex flex-col items-center">
                       <span className="text-green-700 font-bold text-lg">{stands.filter(s => s.status === 'vendido' && s.payment_status === 'pago').length}</span>
-                      <span className="text-green-900 text-sm">Stands Vendidos</span>
+                      <span className="text-green-900 text-sm">{t('stands_sold')}</span>
                     </div>
                     <div className="bg-blue-50 border border-blue-200 rounded p-4 flex flex-col items-center">
                       <span className="text-blue-700 font-bold text-lg">CHF {stands.filter(s => s.status === 'vendido' && s.payment_status === 'pago').reduce((sum, s) => sum + (Number(s.price) || 0), 0).toFixed(2)}</span>
-                      <span className="text-blue-900 text-sm">Valor Recebido</span>
+                      <span className="text-blue-900 text-sm">{t('value_received')}</span>
                     </div>
                     <div className="bg-yellow-50 border border-yellow-200 rounded p-4 flex flex-col items-center">
                       <span className="text-yellow-700 font-bold text-lg">CHF {stands.filter(s => s.status === 'reservado' && s.payment_status !== 'pago').reduce((sum, s) => sum + (Number(s.price) || 0), 0).toFixed(2)}</span>
-                      <span className="text-yellow-900 text-sm">Valor Pendente</span>
+                      <span className="text-yellow-900 text-sm">{t('pending_value')}</span>
                     </div>
                     <div className="bg-gray-50 border border-gray-200 rounded p-4 flex flex-col items-center">
                       <span className="text-gray-700 font-bold text-lg">{stands.filter(s => s.status === 'disponivel').length}</span>
-                      <span className="text-gray-900 text-sm">Stands Disponíveis</span>
+                      <span className="text-gray-900 text-sm">{t('available_stands')}</span>
                     </div>
                   </div>
                   {/* Fim painel financeiro */}
                   {standsLoading ? (
-                    <div className="text-center text-gray-500 py-8">Carregando status dos stands...</div>
+                    <div className="text-center text-gray-500 py-8">{t('loading_stands_status')}</div>
                   ) : stands.length === 0 ? (
-                    <div className="text-center text-gray-500 py-8">Nenhum stand cadastrado para este evento.</div>
+                    <div className="text-center text-gray-500 py-8">{t('no_stands_registered')}</div>
                   ) : (
                     <>
                       <table className="min-w-full bg-white border rounded shadow text-sm">
                         <thead>
                           <tr>
-                            <th className="px-3 py-2 text-left">Nome</th>
-                            <th className="px-3 py-2 text-left">Valor (R$)</th>
-                            <th className="px-3 py-2 text-left">Status</th>
-                            <th className="px-3 py-2 text-left">Reservado por</th>
-                            <th className="px-3 py-2 text-left">Pagamento</th>
-                            <th className="px-3 py-2 text-left">Ver comprovante</th>
+                            <th className="px-3 py-2 text-left">{t('name')}</th>
+                            <th className="px-3 py-2 text-left">{t('value_currency')}</th>
+                            <th className="px-3 py-2 text-left">{t('status')}</th>
+                            <th className="px-3 py-2 text-left">{t('reserved_by')}</th>
+                            <th className="px-3 py-2 text-left">{t('payment')}</th>
+                            <th className="px-3 py-2 text-left">{t('view_receipt')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -651,13 +653,13 @@ const OrganizerOverview = () => {
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="disponivel">
-                                      <span className="text-gray-700 font-semibold">Disponível</span>
+                                      <span className="text-gray-700 font-semibold">{t('available')}</span>
                                     </SelectItem>
                                     <SelectItem value="reservado">
-                                      <span className="text-blue-700 font-bold">Reservado</span>
+                                      <span className="text-blue-700 font-bold">{t('reserved')}</span>
                                     </SelectItem>
                                     <SelectItem value="vendido">
-                                      <span className="text-green-700 font-bold">Vendido</span>
+                                      <span className="text-green-700 font-bold">{t('sold')}</span>
                                     </SelectItem>
                                   </SelectContent>
                                 </Select>
@@ -670,7 +672,7 @@ const OrganizerOverview = () => {
                                     setStands(updated);
                                   }}>
                                     <SelectTrigger className="w-40">
-                                      <SelectValue placeholder="Selecionar participante" />
+                                      <SelectValue placeholder={t('select_participant')} />
                                     </SelectTrigger>
                                     <SelectContent>
                                       {allUsers?.map(user => (
@@ -687,17 +689,17 @@ const OrganizerOverview = () => {
                                 )}
                               </td>
                               <td className="px-3 py-2">
-                                {stand.payment_status === 'pago' && <span className="text-green-700 font-bold">Pago</span>}
-                                {stand.payment_status === 'em_analise' && <span className="text-yellow-700 font-bold">Em análise</span>}
-                                {(!stand.payment_status || stand.payment_status === 'pendente') && <span className="text-gray-500">Pendente</span>}
+                                {stand.payment_status === 'pago' && <span className="text-green-700 font-bold">{t('paid')}</span>}
+                                {stand.payment_status === 'em_analise' && <span className="text-yellow-700 font-bold">{t('under_review')}</span>}
+                                {(!stand.payment_status || stand.payment_status === 'pendente') && <span className="text-gray-500">{t('pending')}</span>}
                               </td>
                               <td className="px-3 py-2 text-center">
                                 {stand.payment_receipt_url ? (
-                                  <Button size="icon" variant="ghost" onClick={() => window.open(stand.payment_receipt_url, '_blank')} title="Ver comprovante">
+                                  <Button size="icon" variant="ghost" onClick={() => window.open(stand.payment_receipt_url, '_blank')} title={t('view_receipt')}>
                                     <Eye className="h-5 w-5 text-blue-700" />
                                   </Button>
                                 ) : (
-                                  <Eye className="h-5 w-5 text-gray-300" title="Sem comprovante" />
+                                  <Eye className="h-5 w-5 text-gray-300" title={t('no_receipt')} />
                                 )}
                               </td>
                             </tr>
@@ -711,7 +713,7 @@ const OrganizerOverview = () => {
                           onClick={handleSaveStandsStatus}
                           disabled={isSubmitting}
                         >
-                          {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+                          {isSubmitting ? t('saving') : t('save_changes')}
                         </button>
                       </div>
                     </>

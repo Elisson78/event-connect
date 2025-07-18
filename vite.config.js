@@ -42,6 +42,7 @@ export default defineConfig({
 		port: 5173,
 		host: true,
 	},
+	publicDir: 'public', // Garantir que a pasta public seja servida
 });
 
 const formatDate = (dateString) => {

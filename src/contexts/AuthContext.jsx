@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
+      console.log('Fetching user details for:', authUser.id);
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
@@ -29,6 +30,7 @@ export const AuthProvider = ({ children }) => {
         .single();
 
       if (userData) {
+        console.log('User data found:', userData);
         const fullUser = { ...authUser, ...userData };
         setUser(fullUser);
         return fullUser;
@@ -101,16 +103,19 @@ export const AuthProvider = ({ children }) => {
     const fetchInitialUser = async () => {
       setLoading(true);
       try {
+        console.log('AuthContext - Fetching initial user session...');
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
-          console.error("Error getting session:", error.message);
+          console.error("AuthContext - Error getting session:", error.message);
         } else if (session?.user) {
+          console.log('AuthContext - Session found, user:', session.user);
           await fetchUserDetails(session.user);
         } else {
+          console.log('AuthContext - No session found');
           setUser(null);
         }
       } catch (error) {
-        console.error("Error in fetchInitialUser:", error);
+        console.error("AuthContext - Error in fetchInitialUser:", error);
         setUser(null);
       } finally {
         setLoading(false);

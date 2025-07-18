@@ -29,6 +29,10 @@ import ParticipantProfile from '@/components/participant/ParticipantProfile';
 import ParticipantPrizes from '@/components/participant/ParticipantPrizes';
 import ParticipantDocuments from '@/components/participant/ParticipantDocuments';
 import ParticipantFinances from './components/participant/ParticipantFinances';
+import TestComponent from './components/TestComponent';
+import I18nDebug from './components/I18nDebug';
+import DirectI18nTest from './components/DirectI18nTest';
+import ErrorBoundary from './components/ErrorBoundary';
 
 import OrganizerOverview from '@/components/organizer/OrganizerOverview';
 import OrganizerProfile from '@/components/organizer/OrganizerProfile';
@@ -42,7 +46,7 @@ import OrganizerPayments from '@/components/organizer/OrganizerPayments';
 import FooterInstallApp from './components/ui/FooterInstallApp';
 
 import { LanguageProvider } from '@/contexts/LanguageContext';
-import '@/utils/i18n';
+// Removido import do i18n para usar solução simplificada
 
 const PageTitleUpdater = () => {
   const location = useLocation();
@@ -163,11 +167,21 @@ function App() {
                       path="/participant/dashboard/*" 
                       element={
                         <ProtectedRoute requiredRole="participant">
-                          <ParticipantDashboard />
+                          <ErrorBoundary>
+                            <ParticipantDashboard />
+                          </ErrorBoundary>
                         </ProtectedRoute>
                       } 
                     >
-                      <Route index element={<ParticipantOverview />} />
+                      <Route index element={
+                        <ErrorBoundary>
+                          <div className="space-y-4">
+                            <TestComponent />
+                            <I18nDebug />
+                            <DirectI18nTest />
+                          </div>
+                        </ErrorBoundary>
+                      } />
                       <Route path="my-events" element={<ParticipantMyEvents />} />
                       <Route path="profile" element={<ParticipantProfile />} />
                       <Route path="prizes" element={<ParticipantPrizes />} />

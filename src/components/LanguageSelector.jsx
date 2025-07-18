@@ -7,13 +7,13 @@ const LANGUAGES = [
   { code: 'fr-CH', label: 'Français (CH)', flag: '🇨🇭', nativeName: 'Français' },
 ];
 
-export const LanguageSelector: React.FC = () => {
+const LanguageSelector = () => {
   const { language, setLanguage } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
 
   const currentLanguage = LANGUAGES.find(lang => lang.code === language) || LANGUAGES[0];
 
-  const handleLanguageChange = (langCode: string, event: React.MouseEvent) => {
+  const handleLanguageChange = (langCode, event) => {
     // Prevenir propagação do evento para evitar que o overlay o capture
     event.stopPropagation();
     event.preventDefault();
@@ -73,4 +73,4 @@ export const LanguageSelector: React.FC = () => {
   );
 };
 
-export default LanguageSelector; 
+export default LanguageSelector;

@@ -6,6 +6,9 @@ const ProfileContext = createContext({ profile: null, loading: true, refetchProf
 export const ProfileProvider = ({ children }) => {
     const { user, loading: authLoading, fetchUserDetails } = useAuth();
 
+    console.log('ProfileContext - User:', user);
+    console.log('ProfileContext - Auth loading:', authLoading);
+
     const refetchProfile = useCallback(async () => {
         if (user) {
             await fetchUserDetails(user);

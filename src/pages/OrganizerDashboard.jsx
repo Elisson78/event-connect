@@ -7,24 +7,26 @@ import { useProfile } from '@/contexts/ProfileContext';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import OrganizerPayments from '@/components/organizer/OrganizerPayments';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const OrganizerDashboard = () => {
+  const { t } = useTranslation('common');
   const { profile, loading: profileLoading } = useProfile();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const getPageTitle = () => {
     const path = location.pathname;
-    if (path.endsWith('/profile')) return 'Perfil da Empresa';
-    if (path.endsWith('/events-management')) return 'Gerenciamento de Eventos';
-    if (path.endsWith('/registrations')) return 'Gerenciar Inscritos';
-    if (path.endsWith('/collaborators')) return 'Colaboradores';
-    if (path.endsWith('/settings')) return 'Configurações';
-    if (path.endsWith('/marketplace')) return 'Mercado de Publicidade';
-    if (path.endsWith('/finances')) return 'Minhas Finanças';
-    if (path.endsWith('/giveaways')) return 'Sistema de Sorteios';
-    if (path.endsWith('/organizer/payments')) return 'Métodos de Pagamento';
-    return 'Visão Geral do Organizador';
+    if (path.endsWith('/profile')) return t('company_profile');
+    if (path.endsWith('/events-management')) return t('event_management');
+    if (path.endsWith('/registrations')) return t('manage_registrations');
+    if (path.endsWith('/collaborators')) return t('collaborators');
+    if (path.endsWith('/settings')) return t('settings');
+    if (path.endsWith('/marketplace')) return t('advertising_marketplace');
+    if (path.endsWith('/finances')) return t('my_finances');
+    if (path.endsWith('/giveaways')) return t('giveaway_system');
+    if (path.endsWith('/organizer/payments')) return t('payment_methods');
+    return t('organizer_overview');
   };
 
   if (profileLoading) {
@@ -55,7 +57,7 @@ const OrganizerDashboard = () => {
                 </h1>
                 {location.pathname.endsWith('/organizer/dashboard') && profile && (
                   <p className="hidden sm:block text-lg md:text-xl text-gray-600 mt-2">
-                    Bem-vindo, <span className="font-semibold text-gradient">{profile.company_name || profile.name}</span>!
+                    {t('welcome_organizer', { name: profile.company_name || profile.name })}
                   </p>
                 )}
               </div>

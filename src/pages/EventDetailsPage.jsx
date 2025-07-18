@@ -9,8 +9,10 @@ import { useEvents } from '@/contexts/EventContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useToast } from '@/components/ui/use-toast';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const EventDetailsPage = () => {
+  const { t } = useTranslation('common');
   const { id } = useParams();
   const { events, isUserRegistered, loadingEvents } = useEvents();
   const { user } = useAuth();
@@ -33,9 +35,9 @@ const EventDetailsPage = () => {
       <div className="min-h-screen bg-gray-50">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Evento não encontrado</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('event_not_found')}</h1>
           <Link to="/events">
-            <Button>Voltar aos eventos</Button>
+            <Button>{t('back_to_events')}</Button>
           </Link>
         </div>
       </div>
@@ -45,8 +47,8 @@ const EventDetailsPage = () => {
   const handleRegisterClick = () => {
     if (!user) {
       toast({
-        title: "Login necessário",
-        description: "Você precisa estar logado para se inscrever em eventos. Redirecionando...",
+        title: t('login_required'),
+        description: t('login_required_desc'),
         variant: "destructive"
       });
       setTimeout(() => navigate('/login'), 2000);
@@ -55,8 +57,8 @@ const EventDetailsPage = () => {
 
     if (profile?.role !== 'participant') {
       toast({
-        title: "Acesso negado",
-        description: "Apenas participantes podem se inscrever em eventos.",
+        title: t('access_denied'),
+        description: t('access_denied_desc'),
         variant: "destructive"
       });
       return;
@@ -66,8 +68,8 @@ const EventDetailsPage = () => {
 
     if (isFree) {
        toast({
-          title: "🚧 A inscrição para eventos gratuitos será implementada em breve!",
-          description: "No momento, o fluxo de pagamento está disponível. Tente se inscrever em um evento pago.",
+          title: t('free_events_coming_soon'),
+          description: t('free_events_coming_soon_desc'),
         });
       // Future logic for free events can go here.
     } else {
@@ -78,14 +80,14 @@ const EventDetailsPage = () => {
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     toast({
-      title: "Link Copiado!",
-      description: "O link do evento foi copiado para a área de transferência.",
+      title: t('link_copied'),
+      description: t('link_copied_desc'),
     });
   };
 
   const handleFavorite = () => {
     toast({
-      title: "🚧 Esta funcionalidade ainda não foi implementada—mas não se preocupe! Você pode solicitá-la no seu próximo prompt! 🚀"
+      title: t('feature_not_implemented')
     });
   };
 
@@ -124,7 +126,7 @@ const EventDetailsPage = () => {
             className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-8 transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar aos eventos
+            {t('back_to_events')}
           </Link>
 
           <div className="grid lg:grid-cols-3 gap-8">
@@ -133,7 +135,7 @@ const EventDetailsPage = () => {
                 <div className="relative h-72 md:h-96">
                   <img  
                     src={bannerImageUrl} 
-                    alt={`Banner do evento ${event.name || 'Evento'}`}
+                    alt={t('event_banner_alt', { name: event.name || 'Evento' })}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-4 right-4 flex space-x-2">
@@ -158,7 +160,7 @@ const EventDetailsPage = () => {
                     <span className={`px-4 py-2 rounded-full text-sm font-semibold text-white ${
                       isAvailable ? 'status-available' : 'status-unavailable'
                     }`}>
-                      {isAvailable ? 'Inscrições Abertas' : 'Esgotado'}
+                      {isAvailable ? t('registration_open') : t('sold_out')}
                     </span>
                   </div>
                 </div>
@@ -172,14 +174,14 @@ const EventDetailsPage = () => {
                     <div className="flex items-center space-x-3">
                       <Calendar className="h-6 w-6 text-blue-600" />
                       <div>
-                        <p className="font-semibold text-gray-900">Data e Hora</p>
+                        <p className="font-semibold text-gray-900">{t('date_and_time')}</p>
                         <p className="text-gray-600">
-                          {event.start_date ? new Date(event.start_date + 'T00:00:00Z').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : 'A definir'}
+                          {event.start_date ? new Date(event.start_date + 'T00:00:00Z').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : t('to_be_defined')}
                           {event.end_date && event.end_date !== event.start_date && ` a ${new Date(event.end_date + 'T00:00:00Z').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}`}
                         </p>
                         {event.start_time && (
                           <p className="text-gray-500 text-sm">
-                            Das {event.start_time.substring(0, 5)}{event.end_time && ` às ${event.end_time.substring(0, 5)}`}
+                            {event.end_time ? t('to_time', { startTime: event.start_time.substring(0, 5), endTime: event.end_time.substring(0, 5) }) : t('from_time', { startTime: event.start_time.substring(0, 5) })}
                           </p>
                         )}
                       </div>
@@ -188,7 +190,7 @@ const EventDetailsPage = () => {
                     <div className="flex items-center space-x-3">
                       <MapPin className="h-6 w-6 text-blue-600" />
                       <div>
-                        <p className="font-semibold text-gray-900">Local</p>
+                        <p className="font-semibold text-gray-900">{t('location')}</p>
                         <p className="text-gray-600">{event.location}</p>
                       </div>
                     </div>
@@ -196,9 +198,9 @@ const EventDetailsPage = () => {
                     <div className="flex items-center space-x-3">
                       <Users className="h-6 w-6 text-blue-600" />
                       <div>
-                        <p className="font-semibold text-gray-900">Participantes</p>
+                        <p className="font-semibold text-gray-900">{t('participants')}</p>
                         <p className="text-gray-600">
-                          {(event.current_participants || 0)}/{event.max_participants} inscritos
+                          {t('registered_count', { current: event.current_participants || 0, max: event.max_participants })}
                         </p>
                       </div>
                     </div>
@@ -206,18 +208,18 @@ const EventDetailsPage = () => {
                     <div className="flex items-center space-x-3">
                       <Tag className="h-6 w-6 text-blue-600" />
                       <div>
-                        <p className="font-semibold text-gray-900">Categoria</p>
-                        <p className="text-gray-600">{event.category?.name || 'Não definida'}</p>
+                        <p className="font-semibold text-gray-900">{t('category')}</p>
+                        <p className="text-gray-600">{event.category?.name || t('not_defined')}</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="mb-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Sobre o Evento</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('about_event')}</h2>
                     {((event.price === 0 || event.is_free) && (
                       <div className="mb-4">
                         <span className="inline-block bg-green-100 text-green-800 text-sm font-semibold px-4 py-2 rounded-full shadow-sm">
-                          Evento Gratuito
+                          {t('free_event')}
                         </span>
                       </div>
                     ))}
@@ -232,7 +234,7 @@ const EventDetailsPage = () => {
                     <div className="mb-8">
                        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
                          <Info className="h-6 w-6 mr-2 text-blue-600"/>
-                         Informações Adicionais
+                         {t('additional_info')}
                        </h2>
                        <div className="grid md:grid-cols-2 gap-4">
                          {event.category.details_schema.map(field => 
@@ -246,7 +248,7 @@ const EventDetailsPage = () => {
 
                   <div className="mb-8">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-gray-700">Vagas Preenchidas</span>
+                      <span className="text-sm font-medium text-gray-700">{t('spots_filled')}</span>
                       <span className="text-sm text-gray-500">
                         {Math.round(((event.current_participants || 0) / event.max_participants) * 100)}%
                       </span>
@@ -267,21 +269,21 @@ const EventDetailsPage = () => {
                 <CardHeader className="flex flex-col items-center">
                     <img  
                       src={cardImageUrl} 
-                      alt={`Card do evento ${event.name || 'Evento'}`}
+                      alt={t('event_card_alt', { name: event.name || 'Evento' })}
                       className="w-full h-40 object-cover rounded-t-lg mb-4"
                     />
                   <CardTitle className="text-center">
                     {event.price ? (
                       <span className="text-3xl font-bold text-orange-600">{event.price}</span>
                     ) : (
-                      <span className="text-3xl font-bold text-green-600">Gratuito</span>
+                      <span className="text-3xl font-bold text-green-600">{t('free')}</span>
                     )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {isRegistered ? (
                     <Button disabled className="w-full h-12 bg-green-600 text-white text-lg">
-                      ✓ Você está inscrito
+                      {t('you_are_registered')}
                     </Button>
                   ) : (
                     <Button 
@@ -289,21 +291,21 @@ const EventDetailsPage = () => {
                       disabled={!isAvailable || isRegistered}
                       className="w-full h-12 btn-orange text-white text-lg font-semibold"
                     >
-                      {isAvailable ? 'Inscrever-se Agora' : 'Esgotado'}
+                      {isAvailable ? t('register_now') : t('sold_out')}
                     </Button>
                   )}
                   
                   <div className="text-center text-sm text-gray-600">
-                    <p>{event.max_participants - (event.current_participants || 0)} vagas restantes</p>
+                    <p>{t('spots_remaining', { count: event.max_participants - (event.current_participants || 0) })}</p>
                   </div>
 
                   <div className="border-t pt-4 space-y-3">
-                    <h3 className="font-semibold text-gray-900">Informações Importantes</h3>
+                    <h3 className="font-semibold text-gray-900">{t('important_info')}</h3>
                     <ul className="text-sm text-gray-600 space-y-2">
-                      <li>• Confirmação por email</li>
-                      <li>• Chegue 30 minutos antes</li>
-                      <li>• Documento obrigatório</li>
-                      <li>• Cancelamento até 24h antes</li>
+                      <li>{t('email_confirmation')}</li>
+                      <li>{t('arrive_early')}</li>
+                      <li>{t('document_required')}</li>
+                      <li>{t('cancellation_policy')}</li>
                     </ul>
                   </div>
                 </CardContent>

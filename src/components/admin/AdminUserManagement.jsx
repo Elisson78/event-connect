@@ -7,8 +7,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import { useTranslation } from '@/hooks/useTranslation';
 
-const UserListCard = ({ title, description, users, onEditUser, onUserDelete, currentUserId }) => (
+const UserListCard = ({ title, description, users, onEditUser, onUserDelete, currentUserId }) => {
+  const { t } = useTranslation('common');
+  return (
   <Card className="shadow-lg">
     <CardHeader>
       <CardTitle>{title}</CardTitle>
@@ -18,7 +21,7 @@ const UserListCard = ({ title, description, users, onEditUser, onUserDelete, cur
       <div className="space-y-4 max-h-64 overflow-y-auto">
         {users.length === 0 ? (
           <p className="text-center text-gray-500 py-4">
-            Nenhum usuário {title.toLowerCase().replace(/s$/, '')} encontrado
+            {t('no_user_found', { type: title.toLowerCase().replace(/s$/, '') })}
           </p>
         ) : (
           users.map((user) => (
@@ -51,9 +54,11 @@ const UserListCard = ({ title, description, users, onEditUser, onUserDelete, cur
       </div>
     </CardContent>
   </Card>
-);
+  );
+};
 
 const AdminUserManagement = ({ usersData, onUserDelete, currentUserId, onUserUpdate }) => {
+  const { t } = useTranslation('common');
   const { toast } = useToast();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -66,7 +71,7 @@ const AdminUserManagement = ({ usersData, onUserDelete, currentUserId, onUserUpd
       if (error) throw error;
       setAvailableRoles(data || []);
     } catch (error) {
-      toast({ title: 'Erro ao buscar funções', description: error.message, variant: 'destructive' });
+      toast({ title: t('error_fetching_roles'), description: error.message, variant: 'destructive' });
     }
   }, [toast]);
 
@@ -92,7 +97,7 @@ const AdminUserManagement = ({ usersData, onUserDelete, currentUserId, onUserUpd
       await onUserUpdate(editingUser.id, { role: selectedRole });
       handleCloseDialog();
     } catch (error) {
-       toast({ title: 'Erro ao atualizar usuário', description: error.message, variant: 'destructive' });
+       toast({ title: t('error_updating_user_role'), description: error.message, variant: 'destructive' });
     }
   };
 
@@ -109,7 +114,7 @@ const AdminUserManagement = ({ usersData, onUserDelete, currentUserId, onUserUpd
           <UserListCard 
             key={group.name}
             title={group.display_name + 's'}
-            description={`Gerencie os usuários com a função ${group.display_name}`}
+            description={t('manage_users_with_role', { role: group.display_name })}
             users={group.users}
             onEditUser={handleEditUser}
             onUserDelete={onUserDelete}
@@ -121,17 +126,17 @@ const AdminUserManagement = ({ usersData, onUserDelete, currentUserId, onUserUpd
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Usuário</DialogTitle>
+            <DialogTitle>{t('edit_user')}</DialogTitle>
             <DialogDescription>
-              Alterar a função de <span className="font-bold">{editingUser?.name || editingUser?.email}</span>.
+              {t('change_role_of_user', { name: editingUser?.name || editingUser?.email })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label htmlFor="role-select">Função do Usuário</Label>
+              <Label htmlFor="role-select">{t('user_role')}</Label>
               <Select value={selectedRole} onValueChange={setSelectedRole}>
                 <SelectTrigger id="role-select">
-                  <SelectValue placeholder="Selecione uma função" />
+                  <SelectValue placeholder={t('select_a_role')} />
                 </SelectTrigger>
                 <SelectContent>
                   {availableRoles.map(role => (
@@ -144,8 +149,8 @@ const AdminUserManagement = ({ usersData, onUserDelete, currentUserId, onUserUpd
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialog}>Cancelar</Button>
-            <Button onClick={handleSaveChanges}>Salvar Alterações</Button>
+            <Button variant="outline" onClick={handleCloseDialog}>{t('cancel')}</Button>
+            <Button onClick={handleSaveChanges}>{t('save_changes')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

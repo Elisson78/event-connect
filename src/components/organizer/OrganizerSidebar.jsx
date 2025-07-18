@@ -3,21 +3,23 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LayoutDashboard, Calendar, Users, Building, DollarSign, HeartHandshake as Handshake, ShoppingBag, Settings, Gift, CreditCard } from 'lucide-react';
 import { useProfile } from '@/contexts/ProfileContext';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const OrganizerSidebar = ({ isOpen, onClose }) => {
+    const { t } = useTranslation('common');
     const { profile: user } = useProfile();
     const location = useLocation();
 
     const menuItems = [
-        { href: '/organizer/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
-        { href: '/organizer/dashboard/profile', label: 'Perfil', icon: Building },
-        { href: '/organizer/dashboard/events-management', label: 'Eventos', icon: Calendar },
-        { href: '/organizer/dashboard/registrations', label: 'Inscritos', icon: Users },
-        { href: '/organizer/dashboard/finances', label: 'Financeiro', icon: DollarSign },
-        { href: '/organizer/dashboard/collaborators', label: 'Colaboradores', icon: Handshake },
-        { href: '/organizer/dashboard/marketplace', label: 'Mercado', icon: ShoppingBag },
-        { href: '/organizer/dashboard/giveaways', label: 'Sorteios', icon: Gift },
-        { href: '/organizer/dashboard/payments', label: 'Pagamentos', icon: CreditCard },
+        { href: '/organizer/dashboard', label: t('organizer_overview'), icon: LayoutDashboard },
+        { href: '/organizer/dashboard/profile', label: t('company_profile'), icon: Building },
+        { href: '/organizer/dashboard/events-management', label: t('events'), icon: Calendar },
+        { href: '/organizer/dashboard/registrations', label: t('manage_registrations'), icon: Users },
+        { href: '/organizer/dashboard/finances', label: t('my_finances'), icon: DollarSign },
+        { href: '/organizer/dashboard/collaborators', label: t('collaborators'), icon: Handshake },
+        { href: '/organizer/dashboard/marketplace', label: t('marketplace'), icon: ShoppingBag },
+        { href: '/organizer/dashboard/giveaways', label: t('giveaway_system'), icon: Gift },
+        { href: '/organizer/dashboard/payments', label: t('payment_methods'), icon: CreditCard },
     ];
 
     const NavLink = ({ item }) => (
@@ -50,7 +52,7 @@ const OrganizerSidebar = ({ isOpen, onClose }) => {
                         {menuItems.map((item) => <NavLink key={item.href} item={item} />)}
                     </nav>
                     <div className="mt-8 pt-6 border-t border-slate-600">
-                        <NavLink item={{ href: '/organizer/dashboard/settings', label: 'Configurações', icon: Settings }} />
+                        <NavLink item={{ href: '/organizer/dashboard/settings', label: t('settings'), icon: Settings }} />
                     </div>
                 </div>
             </aside>

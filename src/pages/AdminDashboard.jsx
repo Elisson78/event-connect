@@ -24,8 +24,10 @@ import { useProfile } from '@/contexts/ProfileContext';
 import { useEvents } from '@/contexts/EventContext';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/customSupabaseClient';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const AdminDashboard = () => {
+  const { t } = useTranslation('common');
   const { profile: currentUser } = useProfile();
   const { 
     events, 
@@ -65,13 +67,13 @@ const AdminDashboard = () => {
       if (error) {
         console.error("Error fetching platform settings:", error);
         if (error.code !== 'PGRST116') {
-          toast({ title: "Erro ao buscar configurações", description: error.message, variant: "destructive"});
+          toast({ title: t('error_fetching_settings'), description: error.message, variant: "destructive"});
         }
       } else if (data) {
         setPlatformSettings(data);
       }
     } catch (err) {
-      toast({ title: "Erro de conexão", description: "Falha ao buscar configurações.", variant: "destructive"});
+      toast({ title: t('connection_error'), description: t('failed_to_fetch_settings'), variant: "destructive"});
     } finally {
       setLoadingPlatformSettings(false);
     }
@@ -107,16 +109,16 @@ const AdminDashboard = () => {
 
   const handleDeleteUser = async (userIdToDelete, userName) => {
     if (userIdToDelete === currentUser?.id) {
-      toast({ title: "Ação não permitida", description: "Você não pode remover sua própria conta.", variant: "destructive"});
+      toast({ title: t('action_not_allowed'), description: t('cannot_remove_own_account'), variant: "destructive"});
       return;
     }
     try {
       const { error } = await supabase.from('users').delete().eq('id', userIdToDelete);
       if (error) throw error;
-      toast({ title: "Usuário removido", description: `${userName} foi removido com sucesso.` });
+      toast({ title: t('user_removed'), description: t('user_removed_desc', { name: userName }) });
       refetchAllUsers();
     } catch (error) {
-      toast({ title: "Erro ao remover usuário", description: error.message, variant: "destructive"});
+      toast({ title: t('error_removing_user'), description: error.message, variant: "destructive"});
     }
   };
 
@@ -124,10 +126,10 @@ const AdminDashboard = () => {
     try {
       const { error } = await supabase.from('users').update(updatedData).eq('id', userIdToUpdate);
       if (error) throw error;
-      toast({ title: "Usuário atualizado!", description: "A função do usuário foi alterada." });
+      toast({ title: t('user_updated'), description: t('user_role_changed') });
       refetchAllUsers();
     } catch (error) {
-       toast({ title: "Erro ao atualizar usuário", description: error.message, variant: "destructive"});
+       toast({ title: t('error_updating_user'), description: error.message, variant: "destructive"});
        throw error;
     }
   };
@@ -140,11 +142,11 @@ const AdminDashboard = () => {
         updated_at: new Date().toISOString()
       }).eq('id', 1);
       if (error) throw error;
-      toast({ title: "Configurações salvas!", description: "A aparência da plataforma foi atualizada."});
+      toast({ title: t('settings_saved'), description: t('platform_appearance_updated')});
       setIsSettingsDialogOpen(false);
       fetchPlatformSettings();
     } catch (error) {
-      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive"});
+      toast({ title: t('error_saving'), description: error.message, variant: "destructive"});
     } finally {
       setLoadingPlatformSettings(false);
     }
@@ -159,10 +161,10 @@ const AdminDashboard = () => {
             .upsert(field, { onConflict: 'field_name' });
           if (error) throw error;
       }
-      toast({ title: "Configurações salvas!", description: "Os campos do card de evento foram atualizados."});
+      toast({ title: t('settings_saved'), description: t('card_fields_updated')});
       await refetchCardFieldSettings();
     } catch (error) {
-      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive"});
+      toast({ title: t('error_saving'), description: error.message, variant: "destructive"});
     } finally {
       setLoadingCardSettingsState(false);
     }
@@ -173,24 +175,24 @@ const AdminDashboard = () => {
   };
   
   const pageTitles = {
-    dashboard: 'Dashboard',
-    users: 'Gerenciamento de Usuários',
-    roles: 'Gerenciamento de Funções',
-    organizers: 'Gerenciamento de Organizadores',
-    plans: 'Planos e Comissões',
-    platform_fees: 'Taxas da Plataforma',
-    payments: 'Configurações de Pagamento',
-    manual_payments: 'Confirmações Manuais',
-    'event-types': 'Tipos de Evento',
-    pages: 'Gerenciamento de Páginas',
-    marketplace: 'Mercado de Publicidade',
-    cardSettings: 'Configurações do Card',
-    backup: 'Backup e Restauração',
-    settings: 'Configurações do Site'
+    dashboard: t('admin_dashboard'),
+    users: t('user_management'),
+    roles: t('role_management'),
+    organizers: t('organizer_management'),
+    plans: t('plans_and_commissions'),
+    platform_fees: t('platform_fees'),
+    payments: t('payment_settings'),
+    manual_payments: t('manual_confirmations'),
+    'event-types': t('event_types'),
+    pages: t('page_management'),
+    marketplace: t('advertising_marketplace'),
+    cardSettings: t('card_settings'),
+    backup: t('backup_restore'),
+    settings: t('site_settings')
   };
 
   const handleRetry = () => {
-    toast({ title: "Tentando reconectar...", description: "Buscando todos os dados novamente." });
+    toast({ title: t('trying_to_reconnect'), description: t('fetching_all_data') });
     refetchEvents();
     refetchAllUsers();
     refetchRegistrations();
@@ -227,9 +229,9 @@ const AdminDashboard = () => {
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 flex justify-between items-center" role="alert">
           <div className="flex items-center">
             <AlertTriangle className="h-6 w-6 mr-3" />
-            <div><p className="font-bold">Falha na Conexão</p><p>Não foi possível conectar ao servidor.</p></div>
+            <div><p className="font-bold">{t('connection_failed')}</p><p>{t('connection_failed_desc')}</p></div>
           </div>
-          <Button onClick={handleRetry} variant="destructive">Tentar Novamente</Button>
+          <Button onClick={handleRetry} variant="destructive">{t('try_again')}</Button>
         </div>
       )}
       <div className="flex pt-16">

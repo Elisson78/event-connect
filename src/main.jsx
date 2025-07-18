@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from '@/App';
 import '@/index.css';
-import '@/utils/i18n';
+// Removido import do i18n para usar solução simplificada
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

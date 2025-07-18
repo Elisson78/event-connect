@@ -8,11 +8,11 @@ import EventCard from '@/components/EventCard';
 import { useEvents } from '@/contexts/EventContext';
 import { QRCode } from 'react-qrcode-logo';
 import InstallPwaButton from '@/components/InstallPwaButton';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const HomePage = () => {
   const { events, loadingEvents, networkError } = useEvents();
-  const { t } = useTranslation('common');
+  const { t } = useLanguage();
   const featuredEvents = events.slice(0, 4);
 
   useEffect(() => {
@@ -50,8 +50,8 @@ const HomePage = () => {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-              {t('hero_title_line1')}
-              <span className="block text-orange-400">{t('hero_title_line2')}</span>
+                      {t('hero_title_line1')}
+        <span className="block text-orange-400">{t('hero_title_line2')}</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
               {t('hero_subtitle')}
@@ -149,8 +149,8 @@ const HomePage = () => {
           {networkError && !loadingEvents && (
             <div className="text-center py-16 text-red-600 bg-red-50 rounded-lg">
               <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
-              <p className="text-xl font-semibold">{t('error_loading_events')}</p>
-              <p>{t('error_loading_events_desc')}</p>
+                      <p className="text-xl font-semibold">{t('error_loading_events')}</p>
+        <p>{t('error_loading_events_desc')}</p>
             </div>
           )}
 

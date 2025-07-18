@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { useTranslation } from 'react-i18next';
+import { supabase } from '@/lib/customSupabaseClient';
 import { useProfile } from '@/contexts/ProfileContext';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Trophy } from 'lucide-react';
 
 const ParticipantPrizes = () => {
+  const { t } = useTranslation();
   const { profile } = useProfile();
   const [prizes, setPrizes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +29,7 @@ const ParticipantPrizes = () => {
   }, [profile]);
 
   if (loading) {
-    return <div className="py-8 text-center text-gray-500">Carregando seus prêmios...</div>;
+    return <div className="py-8 text-center text-gray-500">{t('participant.loadingPrizes') || 'Carregando...'}</div>;
   }
 
   return (
@@ -35,13 +37,13 @@ const ParticipantPrizes = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
           <Trophy className="h-6 w-6 text-yellow-500" />
-          Meus Prêmios
+          {t('participant.prizesTitle') || 'Prêmios'}
         </CardTitle>
-        <CardDescription>Veja aqui todos os sorteios que você ganhou!</CardDescription>
+        <CardDescription>{t('participant.prizesSubtitle') || 'Visualize seus prêmios e conquistas'}</CardDescription>
       </CardHeader>
       <CardContent>
         {prizes.length === 0 ? (
-          <div className="text-gray-500">Você ainda não foi sorteado em nenhum evento.</div>
+          <div className="text-gray-500">{t('participant.noPrizesDesc') || 'Você ainda não ganhou nenhum prêmio.'}</div>
         ) : (
           <ul className="space-y-4">
             {prizes.map(prize => (

@@ -8,8 +8,10 @@ import { useProfile } from '@/contexts/ProfileContext';
 import { useEvents } from '@/contexts/EventContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const EventCard = ({ event, showActions = true }) => {
+  const { t } = useTranslation('common');
   const { user } = useAuth();
   const { profile } = useProfile();
   const { isUserRegistered, cardFieldSettings, loadingCardSettings } = useEvents();
@@ -19,8 +21,8 @@ const EventCard = ({ event, showActions = true }) => {
   const handleRegisterClick = () => {
     if (!user) {
       toast({
-        title: "Login necessário",
-        description: "Você precisa estar logado para se inscrever em eventos. Redirecionando...",
+        title: t('login_required'),
+        description: t('login_required_desc'),
         variant: "destructive"
       });
       setTimeout(() => navigate('/login'), 2000);
@@ -29,8 +31,8 @@ const EventCard = ({ event, showActions = true }) => {
 
     if (profile?.role !== 'participant') {
       toast({
-        title: "Acesso negado",
-        description: "Apenas participantes podem se inscrever em eventos.",
+        title: t('access_denied'),
+        description: t('access_denied_desc'),
         variant: "destructive"
       });
       return;
@@ -40,8 +42,8 @@ const EventCard = ({ event, showActions = true }) => {
 
     if (isFree) {
       toast({
-          title: "🚧 A inscrição para eventos gratuitos será implementada em breve!",
-          description: "No momento, o fluxo de pagamento está disponível. Tente se inscrever em um evento pago.",
+          title: t('free_events_coming_soon'),
+          description: t('free_events_coming_soon_desc'),
         });
       // Future logic for free events can go here.
     } else {
@@ -78,14 +80,14 @@ const EventCard = ({ event, showActions = true }) => {
         <div className="relative h-48 overflow-hidden">
           <img  
             src={imageUrl} 
-            alt={event.name || 'Imagem do evento'}
+            alt={event.name || t('event_image_alt')}
             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
           />
           <div className="absolute top-4 right-4">
             <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${
               isAvailable ? 'status-available' : 'status-unavailable'
             }`}>
-              {isAvailable ? 'Disponível' : 'Esgotado'}
+              {isAvailable ? t('available') : t('sold_out')}
             </span>
           </div>
           {event.category?.name && (
@@ -108,7 +110,7 @@ const EventCard = ({ event, showActions = true }) => {
             {isFieldVisible('date_time') && (
               <div className="flex items-center space-x-2">
                 <Calendar className="h-4 w-4 text-blue-600" />
-                <span>{event.start_date ? new Date(event.start_date).toLocaleDateString('pt-BR') : 'Data não definida'}{event.start_time && ` às ${event.start_time}`}</span>
+                <span>{event.start_date ? new Date(event.start_date).toLocaleDateString('pt-BR') : t('date_not_defined')}{event.start_time && ` às ${event.start_time}`}</span>
               </div>
             )}
             {isFieldVisible('location') && (
@@ -151,12 +153,12 @@ const EventCard = ({ event, showActions = true }) => {
           <CardFooter className="p-6 pt-0 flex gap-3">
             <Link to={`/event/${event.id}`} className="flex-1">
               <Button variant="outline" className="w-full">
-                Ver Detalhes
+                {t('view_details')}
               </Button>
             </Link>
             {isRegistered ? (
               <Button disabled className="flex-1 bg-green-600 text-white">
-                Inscrito ✓
+                {t('registered')}
               </Button>
             ) : (
               <Button 
@@ -164,7 +166,7 @@ const EventCard = ({ event, showActions = true }) => {
                 disabled={!isAvailable || isRegistered}
                 className="flex-1 btn-orange text-white"
               >
-                {isAvailable ? 'Inscreva-se' : 'Esgotado'}
+                {isAvailable ? t('register_action') : t('sold_out')}
               </Button>
             )}
           </CardFooter>

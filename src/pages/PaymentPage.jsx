@@ -9,8 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Loader2, ArrowLeft, CreditCard, Landmark, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const PaymentPage = () => {
+  const { t } = useTranslation('common');
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -60,7 +62,7 @@ const PaymentPage = () => {
       setPlatformMethods(platData || []);
     } catch (error) {
       console.error('PaymentPage: Error fetching payment options:', error);
-      toast({ title: 'Erro ao carregar opções de pagamento', description: error.message, variant: 'destructive' });
+      toast({ title: t('payment_error_title'), description: error.message, variant: 'destructive' });
     } finally {
       setLoadingPaymentOptions(false);
     }
@@ -136,13 +138,13 @@ const PaymentPage = () => {
         }
       }
       toast({
-        title: "Inscrição pré-realizada!",
-        description: "Agora, envie o comprovante de pagamento na área 'Meus Eventos' para confirmar sua vaga.",
+        title: t('pre_registration_complete'),
+        description: t('pre_registration_complete_desc'),
       });
       navigate('/participant/dashboard/my-events');
     } catch (error) {
       toast({
-        title: "Erro ao iniciar inscrição",
+        title: t('registration_error_payment'),
         description: error.message,
         variant: "destructive",
       });
@@ -153,8 +155,8 @@ const PaymentPage = () => {
 
   const handleCardPayment = () => {
     toast({
-      title: 'Pagamento com cartão em breve!',
-      description: 'Esta funcionalidade está sendo finalizada e estará disponível em breve. Por favor, utilize o pagamento manual.',
+      title: t('card_payment_soon'),
+      description: t('card_payment_soon_desc'),
       variant: 'default',
       duration: 5000,
     });
@@ -178,9 +180,9 @@ const PaymentPage = () => {
       <div className="min-h-screen bg-gray-100">
         <Navbar />
         <div className="min-h-screen bg-gray-50 text-center py-20">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Evento não encontrado</h1>
-          <p className="text-gray-600 mb-4">ID do evento: {eventId}</p>
-          <Link to="/events"><Button>Voltar aos eventos</Button></Link>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('event_not_found')}</h1>
+          <p className="text-gray-600 mb-4">{t('event_id', { id: eventId })}</p>
+          <Link to="/events"><Button>{t('back_to_events')}</Button></Link>
         </div>
       </div>
     );
@@ -192,8 +194,8 @@ const PaymentPage = () => {
        <div className="min-h-screen bg-gray-100">
          <Navbar />
          <div className="min-h-screen bg-gray-50 text-center py-20">
-           <h1 className="text-2xl font-bold text-gray-900 mb-4">Você já está inscrito neste evento.</h1>
-           <Link to="/participant/dashboard/my-events"><Button>Ver minhas inscrições</Button></Link>
+           <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('already_registered')}</h1>
+           <Link to="/participant/dashboard/my-events"><Button>{t('view_my_registrations')}</Button></Link>
          </div>
        </div>
      );
@@ -209,20 +211,20 @@ const PaymentPage = () => {
         className="container mx-auto max-w-4xl p-4 md:p-8"
       >
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+          <ArrowLeft className="mr-2 h-4 w-4" /> {t('back')}
         </Button>
         <div className="grid md:grid-cols-5 gap-8">
           <div className="md:col-span-3">
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl">Checkout</CardTitle>
-                <CardDescription>Escolha sua forma de pagamento.</CardDescription>
+                <CardTitle className="text-2xl">{t('checkout')}</CardTitle>
+                <CardDescription>{t('choose_payment_method')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {loadingPaymentOptions ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="animate-spin h-8 w-8" />
-                    <span className="ml-2">Carregando opções de pagamento...</span>
+                    <span className="ml-2">{t('loading_payment_options')}</span>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -234,7 +236,7 @@ const PaymentPage = () => {
                     {organizerMethods.map(method => (
                       <div key={method.id} className="border rounded-lg p-4 space-y-3">
                         <h3 className="font-semibold flex items-center gap-2">
-                          <Landmark /> Pagamento Manual ({method.method_type})
+                          <Landmark /> {t('manual_payment')} ({method.method_type})
                         </h3>
                         <div className="text-sm bg-gray-50 p-3 rounded-md space-y-1">
                           {method.details && typeof method.details === 'object' && Object.keys(method.details).length > 0 ? (
@@ -253,34 +255,34 @@ const PaymentPage = () => {
                                 <p><strong>Pix:</strong> {method.pix}</p>
                               )}
                               {['twint','mbway','pix','conta'].includes(method.method_type) && method.account_holder && (
-                                <p><strong>Titular:</strong> {method.account_holder}</p>
+                                <p><strong>{t('holder')}:</strong> {method.account_holder}</p>
                               )}
                               {method.method_type === 'conta' && method.bank_name && (
-                                <p><strong>Banco:</strong> {method.bank_name}</p>
+                                <p><strong>{t('bank')}:</strong> {method.bank_name}</p>
                               )}
                               {method.method_type === 'conta' && method.iban && (
                                 <p><strong>IBAN:</strong> {method.iban}</p>
                               )}
                               {method.method_type === 'conta' && method.account_number && (
-                                <p><strong>Nº Conta:</strong> {method.account_number}</p>
+                                <p><strong>{t('account_number')}:</strong> {method.account_number}</p>
                               )}
                               {method.method_type === 'conta' && method.bic_swift && (
                                 <p><strong>BIC/SWIFT:</strong> {method.bic_swift}</p>
                               )}
                               {/* Se nenhum dado disponível */}
                               {!(method.twint || method.mbway || method.pix || method.account_holder || method.bank_name || method.iban || method.account_number || method.bic_swift) && (
-                                <p className="text-gray-500">Detalhes do pagamento não disponíveis</p>
+                                <p className="text-gray-500">{t('payment_details_not_available')}</p>
                               )}
                             </>
                           )}
                         </div>
                         <p className="text-xs text-gray-600 flex items-start gap-2">
                           <AlertCircle className="h-4 w-4 mt-0.5 text-orange-500 flex-shrink-0"/>
-                          Após o pagamento, clique no botão abaixo para iniciar a confirmação e garantir sua vaga. Você precisará enviar o comprovante.
+                          {t('payment_instructions')}
                         </p>
                         <Button className="w-full" onClick={handleManualPayment} disabled={isSubmitting}>
                           {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : null}
-                          Já paguei, quero enviar o comprovante
+                          {t('already_paid_send_proof')}
                         </Button>
                       </div>
                     ))}
@@ -288,8 +290,8 @@ const PaymentPage = () => {
                 )}
                 {(organizerMethods.length === 0 && platformMethods.length === 0 && !loadingPaymentOptions) && (
                     <div className="text-center py-8">
-                      <p className="text-gray-500 mb-4">Nenhuma opção de pagamento configurada para este evento.</p>
-                      <p className="text-sm text-gray-400">Organizador ID: {event?.organizer_id}</p>
+                      <p className="text-gray-500 mb-4">{t('no_payment_options')}</p>
+                      <p className="text-sm text-gray-400">{t('organizer_id', { id: event?.organizer_id })}</p>
                     </div>
                 )}
               </CardContent>
@@ -298,18 +300,18 @@ const PaymentPage = () => {
           <div className="md:col-span-2">
             <Card className="sticky top-24">
               <CardHeader>
-                <CardTitle>Resumo do Pedido</CardTitle>
+                <CardTitle>{t('order_summary')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4">
-                    <img className="h-16 w-16 rounded-md object-cover" alt="Event thumbnail" src="https://images.unsplash.com/photo-1691257790470-b5e4e80ca59f" />
+                    <img className="h-16 w-16 rounded-md object-cover" alt={t('event_thumbnail_alt')} src="https://images.unsplash.com/photo-1691257790470-b5e4e80ca59f" />
                     <div>
                         <h4 className="font-semibold">{event.name}</h4>
                         <p className="text-sm text-gray-500">{new Date(event.date).toLocaleDateString('pt-BR')}</p>
                     </div>
                 </div>
                 <div className="border-t pt-4 flex justify-between items-center text-lg">
-                    <span className="font-semibold">Total</span>
+                    <span className="font-semibold">{t('total')}</span>
                     <span className="font-bold text-orange-600">CHF {event.price}</span>
                 </div>
               </CardContent>

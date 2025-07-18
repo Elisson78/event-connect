@@ -61,6 +61,7 @@ export const EventProvider = ({ children }) => {
   const fetchEvents = useCallback(async () => {
     setLoadingEvents(true);
     try {
+      console.log('Fetching events...');
       const { data, error } = await supabase
         .from('events')
         .select(`
@@ -81,6 +82,7 @@ export const EventProvider = ({ children }) => {
         console.error("Error fetching events:", error);
         setEvents([]);
       } else {
+        console.log('Events fetched:', data);
         const sortedEvents = (data || []).sort((a, b) => (b.is_featured === a.is_featured) ? 0 : b.is_featured ? 1 : -1);
         setEvents(sortedEvents);
         setNetworkError(false);
@@ -140,11 +142,13 @@ export const EventProvider = ({ children }) => {
   const fetchRegistrations = useCallback(async () => {
     setLoadingRegistrations(true);
     try {
+      console.log('Fetching registrations...');
       const { data, error } = await supabase.from('registrations').select('*');
       if (error) {
         console.error("Error fetching registrations:", error);
         setRegistrations([]);
       } else {
+        console.log('Registrations fetched:', data);
         setRegistrations(data || []);
         setNetworkError(false);
       }
@@ -192,6 +196,9 @@ export const EventProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    console.log('EventContext - Initial data fetch...');
+    console.log('EventContext - User:', user);
+    console.log('EventContext - Profile:', profile);
     fetchEvents();
     fetchCardFieldSettings();
     fetchAllUsers();
@@ -202,6 +209,7 @@ export const EventProvider = ({ children }) => {
   }, [fetchEvents, fetchCardFieldSettings, fetchAllUsers, fetchAdPlans, fetchEventCategories, fetchPlatformSettings]);
 
   useEffect(() => {
+    console.log('EventContext - User changed, fetching registrations...');
     fetchRegistrations();
   }, [fetchRegistrations, user]);
 
@@ -325,8 +333,12 @@ export const EventProvider = ({ children }) => {
   };
 
   const getUserRegistrations = (userId) => {
+    console.log('getUserRegistrations called with userId:', userId);
+    console.log('Current registrations:', registrations);
     if (!userId) return [];
-    return registrations.filter(reg => reg.user_id === userId);
+    const userRegs = registrations.filter(reg => reg.user_id === userId);
+    console.log('User registrations found:', userRegs);
+    return userRegs;
   };
 
   const isUserRegistered = (eventId, userId) => {

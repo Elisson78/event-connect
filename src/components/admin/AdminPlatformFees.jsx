@@ -13,8 +13,10 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabaseClient';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const AdminPlatformFees = () => {
+  const { t } = useTranslation('common');
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [generatingFeeId, setGeneratingFeeId] = useState(null);
@@ -36,7 +38,7 @@ const AdminPlatformFees = () => {
       if (error) {
         console.error('Erro ao buscar dados do dashboard:', error);
         toast({ 
-          title: 'Erro ao carregar dados', 
+          title: t('error_loading_data'), 
           description: error.message, 
           variant: 'destructive' 
         });
@@ -57,7 +59,7 @@ const AdminPlatformFees = () => {
     } catch (error) {
       console.error('Erro geral:', error);
       toast({ 
-        title: 'Erro inesperado', 
+        title: t('unexpected_error'), 
         description: error.message, 
         variant: 'destructive' 
       });
@@ -82,7 +84,7 @@ const AdminPlatformFees = () => {
         const result = data[0];
         if (result.success) {
           toast({ 
-            title: 'Taxa gerada com sucesso', 
+            title: t('fee_generated_success'), 
             description: result.message,
             variant: 'success'
           });
@@ -90,7 +92,7 @@ const AdminPlatformFees = () => {
           await fetchDashboardData();
         } else {
           toast({ 
-            title: 'Erro ao gerar taxa', 
+            title: t('error_generating_fee'), 
             description: result.message,
             variant: 'destructive'
           });
@@ -99,7 +101,7 @@ const AdminPlatformFees = () => {
     } catch (error) {
       console.error('Erro ao gerar taxa:', error);
       toast({ 
-        title: 'Erro ao gerar taxa', 
+        title: t('error_generating_fee'), 
         description: error.message,
         variant: 'destructive'
       });
@@ -130,28 +132,28 @@ const AdminPlatformFees = () => {
   // Cards de métricas
   const metricCards = [
     {
-      title: 'Volume de Inscrições',
+      title: t('registration_volume'),
       value: dashboardData.volume_inscricoes,
       icon: TrendingUp,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
     },
     {
-      title: 'Lucro da Plataforma',
+      title: t('platform_profit'),
       value: formatCurrency(dashboardData.lucro_plataforma),
       icon: DollarSign,
       color: 'text-green-600',
       bgColor: 'bg-green-50'
     },
     {
-      title: 'Taxas Recebidas',
+      title: t('taxes_received'),
       value: formatCurrency(dashboardData.taxas_recebidas),
       icon: CreditCard,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50'
     },
     {
-      title: 'Taxas Pendentes',
+      title: t('taxes_pending'),
       value: formatCurrency(dashboardData.taxas_pendentes),
       icon: AlertTriangle,
       color: 'text-red-600',
@@ -172,12 +174,12 @@ const AdminPlatformFees = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Taxas</h1>
-          <p className="text-gray-600">Gerencie as taxas de serviço da plataforma</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('fees')}</h1>
+          <p className="text-gray-600">{t('manage_platform_fees')}</p>
         </div>
         <Button onClick={fetchDashboardData} disabled={loading}>
           <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Atualizar
+          {t('update_refresh')}
         </Button>
       </div>
 
@@ -204,9 +206,9 @@ const AdminPlatformFees = () => {
       {/* Histórico de Taxas */}
       <Card>
         <CardHeader>
-          <CardTitle>Histórico de Taxas da Plataforma</CardTitle>
+          <CardTitle>{t('platform_fees_history')}</CardTitle>
           <p className="text-sm text-gray-600">
-            Visualize todas as taxas de serviço geradas por inscrições em eventos.
+            {t('view_all_service_fees')}
           </p>
         </CardHeader>
         <CardContent>
@@ -214,12 +216,12 @@ const AdminPlatformFees = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Organizador</TableHead>
-                  <TableHead>Evento</TableHead>
-                  <TableHead>Plano</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Data</TableHead>
+                  <TableHead>{t('organizer')}</TableHead>
+                  <TableHead>{t('event')}</TableHead>
+                  <TableHead>{t('plan')}</TableHead>
+                  <TableHead>{t('value')}</TableHead>
+                  <TableHead>{t('status')}</TableHead>
+                  <TableHead>{t('date')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -227,11 +229,11 @@ const AdminPlatformFees = () => {
                   <TableRow key={taxa.id}>
                     <TableCell className="font-medium">{taxa.organizador || '-'}</TableCell>
                     <TableCell>{taxa.evento || '-'}</TableCell>
-                    <TableCell>{taxa.plano || 'Padrão'}</TableCell>
+                    <TableCell>{taxa.plano || t('default')}</TableCell>
                     <TableCell>{formatCurrency(taxa.valor)}</TableCell>
                     <TableCell>
                       <Badge variant={taxa.status === 'paid' ? 'default' : 'secondary'}>
-                        {taxa.status === 'paid' ? 'Pago' : 'Pendente'}
+                        {taxa.status === 'paid' ? t('paid') : t('pending')}
                       </Badge>
                     </TableCell>
                     <TableCell>{formatDate(taxa.data)}</TableCell>
@@ -241,7 +243,7 @@ const AdminPlatformFees = () => {
             </Table>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-500">Nenhuma taxa encontrada.</p>
+              <p className="text-gray-500">{t('no_fees_found')}</p>
             </div>
           )}
         </CardContent>
@@ -250,9 +252,9 @@ const AdminPlatformFees = () => {
       {/* Eventos sem Taxa */}
       <Card>
         <CardHeader>
-          <CardTitle>Eventos sem Taxa de Serviço</CardTitle>
+          <CardTitle>{t('events_without_fees')}</CardTitle>
           <p className="text-sm text-gray-600">
-            Estes eventos ainda não possuem taxa de serviço gerada. Clique para gerar manualmente.
+            {t('events_without_fees_desc')}
           </p>
         </CardHeader>
         <CardContent>
@@ -260,10 +262,10 @@ const AdminPlatformFees = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Evento</TableHead>
-                  <TableHead>Organizador</TableHead>
-                  <TableHead>Inscrições Confirmadas</TableHead>
-                  <TableHead>Ação</TableHead>
+                  <TableHead>{t('event')}</TableHead>
+                  <TableHead>{t('organizer')}</TableHead>
+                  <TableHead>{t('confirmed_registrations')}</TableHead>
+                  <TableHead>{t('action')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -283,7 +285,7 @@ const AdminPlatformFees = () => {
                         ) : (
                           <Plus className="h-4 w-4 mr-2" />
                         )}
-                        {generatingFeeId === evento.id ? 'Gerando...' : 'Gerar taxa'}
+                        {generatingFeeId === evento.id ? t('generating') : t('generate_fee')}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -292,7 +294,7 @@ const AdminPlatformFees = () => {
             </Table>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-500">Todos os eventos já possuem taxas geradas.</p>
+              <p className="text-gray-500">{t('no_events_without_fees')}</p>
             </div>
           )}
         </CardContent>

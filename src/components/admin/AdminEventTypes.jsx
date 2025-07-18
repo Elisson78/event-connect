@@ -10,8 +10,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Edit, Trash2, Loader2, Save, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const AdminEventTypes = () => {
+  const { t } = useTranslation('common');
   const { eventCategories, loadingEventCategories, refetchEventCategories } = useEvents();
   const { toast } = useToast();
   
@@ -66,32 +68,32 @@ const AdminEventTypes = () => {
         // Update
         const { error } = await supabase.from('event_categories').update(payload).eq('id', editingCategory.id);
         if (error) throw error;
-        toast({ title: 'Sucesso!', description: 'Categoria atualizada.' });
+        toast({ title: t('success'), description: t('category_updated') });
       } else {
         // Create
         const { error } = await supabase.from('event_categories').insert(payload);
         if (error) throw error;
-        toast({ title: 'Sucesso!', description: 'Nova categoria criada.' });
+        toast({ title: t('success'), description: t('new_category_created') });
       }
       setIsDialogOpen(false);
       refetchEventCategories();
     } catch (error) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      toast({ title: t('error'), description: error.message, variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
   };
   
   const handleDelete = async (categoryId, categoryName) => {
-    if (!window.confirm(`Tem certeza que deseja excluir a categoria "${categoryName}"? Esta ação não pode ser desfeita.`)) return;
+    if (!window.confirm(t('confirm_delete_category', { name: categoryName }))) return;
     
     try {
       const { error } = await supabase.from('event_categories').delete().eq('id', categoryId);
       if (error) throw error;
-      toast({ title: 'Sucesso!', description: `Categoria "${categoryName}" excluída.` });
+      toast({ title: t('success'), description: t('category_deleted', { name: categoryName }) });
       refetchEventCategories();
     } catch (error) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      toast({ title: t('error'), description: error.message, variant: 'destructive' });
     }
   };
 
@@ -99,34 +101,34 @@ const AdminEventTypes = () => {
     <Card className="shadow-lg">
       <CardHeader className="flex flex-row justify-between items-center">
         <div>
-          <CardTitle>Gerenciar Tipos de Evento</CardTitle>
-          <CardDescription>Crie, edite e remova as categorias de eventos da plataforma.</CardDescription>
+          <CardTitle>{t('manage_event_types')}</CardTitle>
+          <CardDescription>{t('manage_event_types_desc')}</CardDescription>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => handleOpenDialog()}>
-              <Plus className="mr-2 h-4 w-4" /> Nova Categoria
+              <Plus className="mr-2 h-4 w-4" /> {t('new_category')}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>{editingCategory ? 'Editar' : 'Criar Nova'} Categoria de Evento</DialogTitle>
+              <DialogTitle>{editingCategory ? t('edit') : t('create_new')} {t('event_category')}</DialogTitle>
               <DialogDescription>
-                Defina um nome e campos personalizados para esta categoria.
+                {t('define_name_and_custom_fields')}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome da Categoria</Label>
+                <Label htmlFor="name">{t('category_name')}</Label>
                 <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
+                <Label htmlFor="description">{t('description')}</Label>
                 <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
               </div>
 
               <div className="space-y-4 pt-4 border-t">
-                <h3 className="font-medium">Campos Personalizados</h3>
+                <h3 className="font-medium">{t('custom_fields')}</h3>
                 <AnimatePresence>
                   {formData.details_schema.map((field, index) => (
                     <motion.div
@@ -138,41 +140,41 @@ const AdminEventTypes = () => {
                     >
                        <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <Label className="text-xs">Chave (sem espaços/acentos)</Label>
-                            <Input value={field.key} onChange={e => handleFieldChange(index, 'key', e.target.value.toLowerCase().replace(/\s/g, '_'))} placeholder="ex: palestrantes" />
+                            <Label className="text-xs">{t('key_no_spaces')}</Label>
+                            <Input value={field.key} onChange={e => handleFieldChange(index, 'key', e.target.value.toLowerCase().replace(/\s/g, '_'))} placeholder={t('example_speakers')} />
                           </div>
                           <div>
-                            <Label className="text-xs">Rótulo (Label)</Label>
-                            <Input value={field.label} onChange={e => handleFieldChange(index, 'label', e.target.value)} placeholder="Ex: Palestrantes do Evento" />
+                            <Label className="text-xs">{t('label')}</Label>
+                            <Input value={field.label} onChange={e => handleFieldChange(index, 'label', e.target.value)} placeholder={t('example_event_speakers')} />
                           </div>
                           <div>
-                            <Label className="text-xs">Tipo do Campo</Label>
+                            <Label className="text-xs">{t('field_type')}</Label>
                              <select value={field.type} onChange={e => handleFieldChange(index, 'type', e.target.value)} className="w-full p-2 border rounded">
-                               <option value="text">Texto Curto</option>
-                               <option value="textarea">Texto Longo</option>
+                               <option value="text">{t('short_text')}</option>
+                               <option value="textarea">{t('long_text')}</option>
                              </select>
                           </div>
                            <div>
-                            <Label className="text-xs">Placeholder</Label>
-                            <Input value={field.placeholder} onChange={e => handleFieldChange(index, 'placeholder', e.target.value)} placeholder="Texto de ajuda no campo" />
+                            <Label className="text-xs">{t('placeholder')}</Label>
+                            <Input value={field.placeholder} onChange={e => handleFieldChange(index, 'placeholder', e.target.value)} placeholder={t('help_text_field')} />
                            </div>
                        </div>
                        <Button type="button" variant="destructive" size="sm" onClick={() => removeField(index)}>
-                         <X className="h-4 w-4 mr-1" /> Remover Campo
+                         <X className="h-4 w-4 mr-1" /> {t('remove_field')}
                        </Button>
                     </motion.div>
                   ))}
                 </AnimatePresence>
                 <Button type="button" variant="outline" onClick={addField}>
-                  <Plus className="mr-2 h-4 w-4" /> Adicionar Campo Personalizado
+                  <Plus className="mr-2 h-4 w-4" /> {t('add_custom_field')}
                 </Button>
               </div>
 
               <div className="flex justify-end space-x-2 pt-4">
-                <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>{t('cancel')}</Button>
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  Salvar
+                  {t('save')}
                 </Button>
               </div>
             </form>
