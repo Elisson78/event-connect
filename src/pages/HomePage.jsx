@@ -8,30 +8,32 @@ import EventCard from '@/components/EventCard';
 import { useEvents } from '@/contexts/EventContext';
 import { QRCode } from 'react-qrcode-logo';
 import InstallPwaButton from '@/components/InstallPwaButton';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const HomePage = () => {
   const { events, loadingEvents, networkError } = useEvents();
+  const { t } = useTranslation('common');
   const featuredEvents = events.slice(0, 4);
 
   useEffect(() => {
-    document.title = 'EventiConnect - Sua Plataforma de Eventos';
-  }, []);
+    document.title = t('page_title_home');
+  }, [t]);
 
   const features = [
     {
       icon: Calendar,
-      title: 'Criação Fácil',
-      description: 'Crie eventos em minutos com nossa interface intuitiva'
+      title: t('feature_easy_creation'),
+      description: t('feature_easy_creation_desc')
     },
     {
       icon: Users,
-      title: 'Gestão Completa',
-      description: 'Gerencie participantes e acompanhe inscrições em tempo real'
+      title: t('feature_complete_management'),
+      description: t('feature_complete_management_desc')
     },
     {
       icon: Trophy,
-      title: 'Experiência Premium',
-      description: 'Ofereça uma experiência única para seus participantes'
+      title: t('feature_premium_experience'),
+      description: t('feature_premium_experience_desc')
     }
   ];
 
@@ -48,22 +50,22 @@ const HomePage = () => {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-              Cada Dia Um Novo
-              <span className="block text-orange-400">Desafio</span>
+              {t('hero_title_line1')}
+              <span className="block text-orange-400">{t('hero_title_line2')}</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
-              Hoje na EventiConnect temos diversos eventos com inscrições abertas para você desafiar os seus limites
+              {t('hero_subtitle')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link to="/events">
                 <Button size="lg" className="btn-orange text-white px-8 py-4 text-lg">
-                  Explorar Eventos
+                  {t('explore_events')}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
               <Link to="/register">
                 <Button size="lg" variant="outline" className="bg-white/10 border-white text-white hover:bg-white hover:text-gray-900 px-8 py-4 text-lg">
-                  Crie seu Evento Agora!
+                  {t('create_event_now')}
                 </Button>
               </Link>
             </div>
@@ -95,10 +97,10 @@ const HomePage = () => {
             className="text-center mb-16"
           >
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Por que escolher a <span className="text-gradient">EventiConnect</span>?
+              {t('why_choose_title')} <span className="text-gradient">EventiConnect</span>?
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              A plataforma mais completa para criar, gerenciar e participar de eventos incríveis
+              {t('why_choose_subtitle')}
             </p>
           </motion.div>
 
@@ -131,10 +133,10 @@ const HomePage = () => {
             className="text-center mb-16"
           >
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Próximos Eventos
+              {t('upcoming_events')}
             </h2>
             <p className="text-xl text-gray-600">
-              Descubra os eventos mais aguardados da temporada
+              {t('upcoming_events_subtitle')}
             </p>
           </motion.div>
 
@@ -147,8 +149,8 @@ const HomePage = () => {
           {networkError && !loadingEvents && (
             <div className="text-center py-16 text-red-600 bg-red-50 rounded-lg">
               <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
-              <p className="text-xl font-semibold">Ocorreu um erro ao carregar os eventos.</p>
-              <p>Por favor, verifique sua conexão e tente novamente.</p>
+              <p className="text-xl font-semibold">{t('error_loading_events')}</p>
+              <p>{t('error_loading_events_desc')}</p>
             </div>
           )}
 
@@ -169,7 +171,7 @@ const HomePage = () => {
               <div className="text-center mt-12">
                 <Link to="/events">
                   <Button size="lg" className="btn-primary text-white px-8 py-4">
-                    Ver Todos os Eventos
+                    {t('view_all_events')}
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
@@ -181,10 +183,10 @@ const HomePage = () => {
              <div className="text-center py-16">
                <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                <h3 className="text-2xl font-semibold text-gray-900 mb-2">
-                 Nenhum evento no momento.
+                 {t('no_events_available')}
                </h3>
                <p className="text-gray-600">
-                 Volte em breve para ver novos eventos!
+                 {t('no_events_available_desc')}
                </p>
              </div>
           )}
@@ -199,14 +201,14 @@ const HomePage = () => {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Pronto para criar seu próximo evento?
+              {t('ready_to_create_next_event')}
             </h2>
             <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-              Junte-se a milhares de organizadores que já confiam na EventiConnect para criar experiências inesquecíveis
+              {t('ready_to_create_next_event_desc')}
             </p>
             <Link to="/register">
               <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg font-semibold">
-                Começar Agora - É Grátis!
+                {t('start_now_free')}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
@@ -223,31 +225,31 @@ const HomePage = () => {
                 <span className="text-2xl font-bold">EventiConnect</span>
               </div>
               <p className="text-gray-400">
-                A plataforma mais completa para eventos no Brasil.
+                {t('footer_platform_desc')}
               </p>
             </div>
             <div>
               <span className="text-lg font-semibold mb-4 block">Plataforma</span>
               <ul className="space-y-2 text-gray-400">
-                <li>Criar Eventos</li>
-                <li>Participar</li>
-                <li>Gerenciar</li>
+                <li>{t('create_events')}</li>
+                <li>{t('participate')}</li>
+                <li>{t('manage')}</li>
               </ul>
             </div>
             <div>
               <span className="text-lg font-semibold mb-4 block">Suporte</span>
               <ul className="space-y-2 text-gray-400">
-                <li>Central de Ajuda</li>
-                <li>Contato</li>
-                <li>FAQ</li>
+                <li>{t('help_center')}</li>
+                <li>{t('contact')}</li>
+                <li>{t('faq')}</li>
               </ul>
             </div>
             <div>
               <span className="text-lg font-semibold mb-4 block">Legal</span>
               <ul className="space-y-2 text-gray-400">
-                <li>Termos de Uso</li>
-                <li>Privacidade</li>
-                <li>Cookies</li>
+                <li>{t('terms_of_use')}</li>
+                <li>{t('privacy_policy')}</li>
+                <li>{t('cookies')}</li>
               </ul>
             </div>
           </div>

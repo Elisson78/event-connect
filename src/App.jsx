@@ -41,6 +41,9 @@ import OrganizerFinances from '@/components/organizer/OrganizerFinances';
 import OrganizerPayments from '@/components/organizer/OrganizerPayments';
 import FooterInstallApp from './components/ui/FooterInstallApp';
 
+import { LanguageProvider } from '@/contexts/LanguageContext';
+import '@/utils/i18n';
+
 const PageTitleUpdater = () => {
   const location = useLocation();
   const { toast } = useToast();
@@ -120,70 +123,72 @@ function App() {
       <ProfileProvider>
         <EventProvider>
           <SettingsProvider>
-            <Router>
-            <PageTitleUpdater />
-            <div className="min-h-screen bg-gray-50">
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/events" element={<EventsPage />} />
-                <Route path="/event/:id" element={<EventDetailsPage />} />
-                <Route path="/organizador/:organizerId" element={<ProtectedRoute><OrganizerProfilePage /></ProtectedRoute>} />
-                <Route path="/para-organizadores" element={<AboutOrganizersPage />} />
-                <Route path="/planos" element={<PricingPage />} />
-                <Route path="/p/:slug" element={<DynamicPage />} />
-                <Route path="/payment/:eventId" element={<ProtectedRoute requiredRole="participant"><PaymentPage /></ProtectedRoute>} />
+            <LanguageProvider>
+              <Router>
+                <PageTitleUpdater />
+                <div className="min-h-screen bg-gray-50">
+                  <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/events" element={<EventsPage />} />
+                    <Route path="/event/:id" element={<EventDetailsPage />} />
+                    <Route path="/organizador/:organizerId" element={<ProtectedRoute><OrganizerProfilePage /></ProtectedRoute>} />
+                    <Route path="/para-organizadores" element={<AboutOrganizersPage />} />
+                    <Route path="/planos" element={<PricingPage />} />
+                    <Route path="/p/:slug" element={<DynamicPage />} />
+                    <Route path="/payment/:eventId" element={<ProtectedRoute requiredRole="participant"><PaymentPage /></ProtectedRoute>} />
 
-                <Route 
-                  path="/organizer/dashboard/*" 
-                  element={
-                    <ProtectedRoute requiredRole="organizer">
-                      <OrganizerDashboard />
-                    </ProtectedRoute>
-                  } 
-                >
-                  <Route index element={<OrganizerOverview />} />
-                  <Route path="profile" element={<OrganizerProfile />} />
-                  <Route path="events-management" element={<OrganizerEventsManagement />} />
-                  <Route path="registrations" element={<OrganizerRegistrations />} />
-                  <Route path="giveaways" element={<OrganizerGiveaways />} />
-                  <Route path="marketplace" element={<OrganizerMarketplace />} />
-                  <Route path="collaborators" element={<OrganizerCollaborators />} />
-                  <Route path="finances" element={<OrganizerFinances />} />
-                  <Route path="manual-payment" element={<ManualPaymentPage />} />
-                  <Route path="payments" element={<OrganizerPayments />} />
-                </Route>
+                    <Route 
+                      path="/organizer/dashboard/*" 
+                      element={
+                        <ProtectedRoute requiredRole="organizer">
+                          <OrganizerDashboard />
+                        </ProtectedRoute>
+                      } 
+                    >
+                      <Route index element={<OrganizerOverview />} />
+                      <Route path="profile" element={<OrganizerProfile />} />
+                      <Route path="events-management" element={<OrganizerEventsManagement />} />
+                      <Route path="registrations" element={<OrganizerRegistrations />} />
+                      <Route path="giveaways" element={<OrganizerGiveaways />} />
+                      <Route path="marketplace" element={<OrganizerMarketplace />} />
+                      <Route path="collaborators" element={<OrganizerCollaborators />} />
+                      <Route path="finances" element={<OrganizerFinances />} />
+                      <Route path="manual-payment" element={<ManualPaymentPage />} />
+                      <Route path="payments" element={<OrganizerPayments />} />
+                    </Route>
 
-                <Route 
-                  path="/participant/dashboard/*" 
-                  element={
-                    <ProtectedRoute requiredRole="participant">
-                      <ParticipantDashboard />
-                    </ProtectedRoute>
-                  } 
-                >
-                  <Route index element={<ParticipantOverview />} />
-                  <Route path="my-events" element={<ParticipantMyEvents />} />
-                  <Route path="profile" element={<ParticipantProfile />} />
-                  <Route path="prizes" element={<ParticipantPrizes />} />
-                  <Route path="documents" element={<ParticipantDocuments />} />
-                  <Route path="finances" element={<ParticipantFinances />} />
-                </Route>
-                
-                <Route 
-                  path="/admin/dashboard/*" 
-                  element={
-                    <ProtectedRoute requiredRole="admin">
-                      <AdminDashboard />
-                    </ProtectedRoute>
-                  } 
-                />
-              </Routes>
-              <Toaster />
-              <FooterInstallApp />
-            </div>
-          </Router>
+                    <Route 
+                      path="/participant/dashboard/*" 
+                      element={
+                        <ProtectedRoute requiredRole="participant">
+                          <ParticipantDashboard />
+                        </ProtectedRoute>
+                      } 
+                    >
+                      <Route index element={<ParticipantOverview />} />
+                      <Route path="my-events" element={<ParticipantMyEvents />} />
+                      <Route path="profile" element={<ParticipantProfile />} />
+                      <Route path="prizes" element={<ParticipantPrizes />} />
+                      <Route path="documents" element={<ParticipantDocuments />} />
+                      <Route path="finances" element={<ParticipantFinances />} />
+                    </Route>
+                    
+                    <Route 
+                      path="/admin/dashboard/*" 
+                      element={
+                        <ProtectedRoute requiredRole="admin">
+                          <AdminDashboard />
+                        </ProtectedRoute>
+                      } 
+                    />
+                  </Routes>
+                  <Toaster />
+                  <FooterInstallApp />
+                </div>
+              </Router>
+            </LanguageProvider>
           </SettingsProvider>
         </EventProvider>
       </ProfileProvider>

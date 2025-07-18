@@ -10,6 +10,7 @@ import { useProfile } from '@/contexts/ProfileContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Calendar, Mail, Lock, ArrowLeft, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -19,12 +20,13 @@ const LoginPage = () => {
   const { profile, loading: profileLoading } = useProfile();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { t } = useTranslation('common');
 
   useEffect(() => {
     if (!profileLoading && profile) {
       toast({
-        title: "Login bem-sucedido!",
-        description: `Bem-vindo(a) de volta, ${profile.name || profile.email}!`,
+        title: t('login_success_title'),
+        description: t('login_success_desc', { name: profile.name || profile.email }),
         className: "bg-green-100 border-green-400 text-green-700",
       });
 
@@ -42,7 +44,7 @@ const LoginPage = () => {
           navigate('/');
       }
     }
-  }, [profile, profileLoading, navigate, toast]);
+  }, [profile, profileLoading, navigate, toast, t]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -51,15 +53,15 @@ const LoginPage = () => {
       await login(email, password);
     } catch (error) {
       console.error("Login error:", error);
-      let errorMessage = "E-mail ou senha incorretos.";
+      let errorMessage = t('login_error_invalid_credentials');
       if (error.message.toLowerCase().includes('email not confirmed')) {
-        errorMessage = "Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada e spam.";
+        errorMessage = t('login_error_email_not_confirmed');
       } else if (error.message.toLowerCase().includes('invalid login credentials')) {
-        errorMessage = "Credenciais de login inválidas. Verifique seu e-mail e senha.";
+        errorMessage = t('login_error_invalid_credentials');
       }
       
       toast({
-        title: "Erro no login",
+        title: t('login_error_title'),
         description: errorMessage,
         variant: "destructive"
       });
@@ -81,7 +83,7 @@ const LoginPage = () => {
           className="inline-flex items-center text-gray-600 hover:text-blue-600 mb-6 transition-colors group"
         >
           <ArrowLeft className="h-4 w-4 mr-2 transition-transform group-hover:-translate-x-1" />
-          Voltar para a página inicial
+          {t('back_to_home')}
         </Link>
         <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm overflow-hidden">
           <CardHeader className="text-center p-8 bg-gray-50/50">
@@ -96,23 +98,23 @@ const LoginPage = () => {
               </div>
             </motion.div>
             <CardTitle className="text-3xl font-bold text-gray-800">
-              Acesse sua Conta
+              {t('login_title')}
             </CardTitle>
             <CardDescription className="text-gray-500 pt-1">
-              Bem-vindo(a) de volta ao <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-orange-500">EventiConnect</span>!
+              {t('login_welcome')} <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-orange-500">EventiConnect</span>!
             </CardDescription>
           </CardHeader>
 
           <CardContent className="p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('email')}</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     id="email"
                     type="email"
-                    placeholder="seu.email@exemplo.com"
+                    placeholder={t('email_placeholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -122,13 +124,13 @@ const LoginPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
+                <Label htmlFor="password">{t('password')}</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Sua senha"
+                    placeholder={t('password_placeholder')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -143,18 +145,18 @@ const LoginPage = () => {
                 className="w-full h-11 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white"
               >
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {isSubmitting ? 'Entrando...' : 'Entrar'}
+                {isSubmitting ? t('logging_in') : t('login')}
               </Button>
             </form>
 
             <div className="mt-6 text-center text-sm">
               <p className="text-gray-600">
-                Não tem uma conta?{' '}
+                {t('no_account')}{' '}
                 <Link 
                   to="/register" 
                   className="font-semibold text-blue-600 hover:underline"
                 >
-                  Cadastre-se
+                  {t('sign_up')}
                 </Link>
               </p>
             </div>
