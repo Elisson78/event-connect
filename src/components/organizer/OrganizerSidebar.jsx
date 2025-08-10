@@ -1,14 +1,38 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Calendar, Users, Building, DollarSign, HeartHandshake as Handshake, ShoppingBag, Settings, Gift, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, Building, DollarSign, HeartHandshake as Handshake, ShoppingBag, Settings, Gift, CreditCard, LogOut, User } from 'lucide-react';
 import { useProfile } from '@/contexts/ProfileContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useToast } from '@/components/ui/use-toast';
 
 const OrganizerSidebar = ({ isOpen, onClose }) => {
     const { t } = useTranslation('common');
     const { profile: user } = useProfile();
+    const { signOut } = useAuth();
+    const { toast } = useToast();
     const location = useLocation();
+    const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        try {
+            await signOut();
+            toast({
+                title: t('logout_success_title'),
+                description: t('logout_success_desc'),
+                className: "bg-green-100 border-green-400 text-green-700",
+            });
+            navigate('/');
+        } catch (error) {
+            console.error('Logout error:', error);
+            toast({
+                title: t('logout_error_title'),
+                description: t('logout_error_desc'),
+                variant: "destructive"
+            });
+        }
+    };
 
     const menuItems = [
         { href: '/organizer/dashboard', label: t('organizer_overview'), icon: LayoutDashboard },
@@ -53,6 +77,33 @@ const OrganizerSidebar = ({ isOpen, onClose }) => {
                     </nav>
                     <div className="mt-8 pt-6 border-t border-slate-600">
                         <NavLink item={{ href: '/organizer/dashboard/settings', label: t('settings'), icon: Settings }} />
+                    </div>
+                    
+                    {/* Seção do Usuário e Logout */}
+                    <div className="mt-6 pt-4 border-t border-slate-600">
+                        <div className="flex items-center space-x-3 px-4 py-3 mb-3">
+                            <div className="flex items-center justify-center w-10 h-10 bg-slate-600 rounded-full">
+                                <User className="h-5 w-5 text-slate-300" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-white truncate">
+                                    {user?.company_name || user?.name || 'Organizador'}
+                                </p>
+                                <p className="text-xs text-slate-300 truncate">
+                                    {user?.email}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <motion.button
+                            onClick={handleLogout}
+                            className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-300 hover:bg-red-500/20 hover:text-red-200 transition-all duration-200 cursor-pointer"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                        >
+                            <LogOut className="h-5 w-5" />
+                            <span className="font-medium">{t('logout')}</span>
+                        </motion.button>
                     </div>
                 </div>
             </aside>

@@ -13,7 +13,7 @@ const translations = {
 type LanguageContextType = {
   language: string;
   setLanguage: (lang: string) => void;
-  t: (key: string) => string;
+  t: (key: string, options?: Record<string, string | number>) => string;
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -37,29 +37,45 @@ export const LanguageProvider: React.FC<{children: React.ReactNode}> = ({ childr
   };
 
   // Função para obter uma tradução
-  const t = (key: string) => {
+  const t = (key: string, options?: Record<string, string | number>) => {
     const currentTranslations = translations[language] || translations['pt-BR'];
+    
+    let value: string;
     
     // Verificar se a chave contém pontos (acesso aninhado)
     if (key.includes('.')) {
       const parts = key.split('.');
-      let value = currentTranslations;
+      let result = currentTranslations;
       
       // Navegar através das partes da chave
       for (const part of parts) {
-        if (value && typeof value === 'object' && part in value) {
-          value = value[part];
+        if (result && typeof result === 'object' && part in result) {
+          result = result[part];
         } else {
           console.log('Chave não encontrada:', key);
           return key; // Retornar a chave original se não encontrada
         }
       }
       
+      value = typeof result === 'string' ? result : key;
+    } else {
+      // Acesso direto para chaves simples
+      value = currentTranslations[key] || key;
+    }
+    
+    // Se não há opções para interpolação, retornar o valor diretamente
+    if (!options || typeof value !== 'string') {
       return value;
     }
     
-    // Acesso direto para chaves simples
-    return currentTranslations[key] || key;
+    // Realizar interpolação de template (substituir {{variável}} por valores)
+    let interpolatedValue = value;
+    for (const [variable, replacement] of Object.entries(options)) {
+      const placeholder = `{{${variable}}}`;
+      interpolatedValue = interpolatedValue.replace(new RegExp(placeholder, 'g'), String(replacement));
+    }
+    
+    return interpolatedValue;
   };
 
   useEffect(() => {

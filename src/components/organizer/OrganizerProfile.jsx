@@ -11,8 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProfileForm from './profile/ProfileForm';
 import MediaManager from './profile/MediaManager';
 import CertificateGenerator from './profile/CertificateGenerator';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const OrganizerProfile = () => {
+  const { t } = useTranslation('common');
   const { user, loading: authLoading } = useAuth();
   const { refetchProfile } = useProfile();
   const { toast } = useToast();
@@ -200,9 +202,9 @@ const OrganizerProfile = () => {
       <form onSubmit={handleSubmit}>
         <Tabs defaultValue="profile" className="w-full">
           <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
-            <TabsTrigger value="profile">Perfil da Empresa</TabsTrigger>
-            <TabsTrigger value="media">Mídia e Documentos</TabsTrigger>
-            <TabsTrigger value="certificates">Certificados e Crachás</TabsTrigger>
+            <TabsTrigger value="profile">{t('company_profile_tab')}</TabsTrigger>
+            <TabsTrigger value="media">{t('media_documents_tab')}</TabsTrigger>
+            <TabsTrigger value="certificates">{t('certificates_badges_tab')}</TabsTrigger>
           </TabsList>
           
           <TabsContent value="profile">
@@ -233,16 +235,16 @@ const OrganizerProfile = () => {
         <CardFooter className="bg-gray-50 p-6 flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 mt-4 rounded-b-xl border-t">
           {isEditing ? (
             <>
-              <Button type="button" variant="outline" onClick={() => { setIsEditing(false); resetFormState(user); }} disabled={loadingSubmit} className="w-full sm:w-auto">Cancelar</Button>
+              <Button type="button" variant="outline" onClick={() => { setIsEditing(false); resetFormState(user); }} disabled={loadingSubmit} className="w-full sm:w-auto">{t('cancel')}</Button>
               <Button type="submit" disabled={loadingSubmit} className="btn-primary text-white w-full sm:w-auto">
                 <Save className="h-4 w-4 mr-2" />
-                {loadingSubmit ? 'Salvando...' : 'Salvar Alterações'}
+                {loadingSubmit ? t('saving_profile') : t('save_changes_profile')}
               </Button>
             </>
           ) : (
             <Button type="button" onClick={() => setIsEditing(true)} className="btn-primary text-white w-full sm:w-auto">
               <Edit3 className="h-4 w-4 mr-2" />
-              Editar Perfil
+              {t('edit_profile')}
             </Button>
           )}
         </CardFooter>

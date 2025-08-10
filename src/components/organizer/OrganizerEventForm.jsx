@@ -13,8 +13,10 @@ import { useToast } from '@/components/ui/use-toast';
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { saveAs } from 'file-saver';
 import { supabase } from '@/lib/supabaseClient';
+import { useTranslation } from '@/hooks/useTranslation';
 
-const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submitButtonText = "Criar Evento", onStandsChange, stands: standsProp = [] }) => {
+const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submitButtonText, onStandsChange, stands: standsProp = [] }) => {
+  const { t } = useTranslation('common');
   const { adPlans, loadingAdPlans, eventCategories, loadingEventCategories } = useEvents();
   const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -104,7 +106,7 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
     if (!qty || qty < 1) return;
     // Validação: valor negativo
     if (standForm.price && parseFloat(standForm.price) < 0) {
-      toast({ title: 'Valor inválido', description: 'O valor não pode ser negativo.', variant: 'destructive' });
+      toast({ title: t('invalid_value'), description: t('negative_value_error'), variant: 'destructive' });
       return;
     }
     // Validação: nomes duplicados
@@ -135,7 +137,7 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
     const allNames = [...stands.map(s => s.name), ...newStands.map(s => s.name)];
     const hasDuplicate = allNames.length !== new Set(allNames).size;
     if (hasDuplicate) {
-      toast({ title: 'Nome duplicado', description: 'Já existe stand com esse nome.', variant: 'destructive' });
+      toast({ title: t('duplicate_name'), description: t('duplicate_stand_error'), variant: 'destructive' });
       return;
     }
     // Se estiver editando um evento existente, salvar imediatamente no banco
@@ -151,7 +153,7 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
         }));
         const { error: standError } = await supabase.from('event_stands').insert(standRows);
         if (standError) {
-          toast({ title: 'Erro ao salvar stands', description: standError.message, variant: 'destructive' });
+          toast({ title: t('error_saving_stands'), description: standError.message, variant: 'destructive' });
           return;
         }
         // Buscar lista atualizada do banco
@@ -169,9 +171,9 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
             reserved_by: s.reserved_by
           })));
         }
-        toast({ title: 'Stands adicionados', description: `${qty} stand(s) adicionados com sucesso.` });
+        toast({ title: t('stands_added'), description: t('stands_added_success', { count: qty }) });
       } catch (err) {
-        toast({ title: 'Erro ao salvar stands', description: err.message, variant: 'destructive' });
+        toast({ title: t('error_saving_stands'), description: err.message, variant: 'destructive' });
       }
       setStandForm({ name: '', description: '', price: '' });
       setEditingStandIndex(null);
@@ -227,7 +229,7 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
       );
     });
     const csvRows = [
-      ['Nome', 'Descrição', 'Valor (CHF)'],
+      [t('name'), t('description'), t('value_currency')],
       ...filteredStands.map(s => [s.name, s.description, s.price])
     ];
     const csvContent = csvRows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -246,7 +248,7 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="name">Nome do Evento *</Label>
+          <Label htmlFor="name">{t('event_name')} {t('required_field')}</Label>
           <Input 
             id="name" 
             value={formData.name} 
@@ -256,10 +258,10 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="category_id">Categoria do Evento</Label>
+          <Label htmlFor="category_id">{t('event_category')}</Label>
           <Select value={formData.category_id || ''} onValueChange={(value) => onInputChange('category_id', value)}>
             <SelectTrigger>
-              <SelectValue placeholder={loadingEventCategories ? "Carregando..." : "Selecione a categoria"} />
+              <SelectValue placeholder={loadingEventCategories ? t('loading_categories') : t('select_category')} />
             </SelectTrigger>
             <SelectContent>
               {!loadingEventCategories && eventCategories.map(cat => (
@@ -270,7 +272,7 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
         </div>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="description">Descrição *</Label>
+        <Label htmlFor="description">{t('event_description')} {t('required_field')}</Label>
         <Textarea 
           id="description" 
           value={formData.description} 
@@ -288,7 +290,7 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
             exit={{ opacity: 0, height: 0 }}
             className="space-y-4 pt-4 mt-4 border-t border-dashed"
           >
-            <h3 className="font-medium text-gray-800 flex items-center"><Info className="h-4 w-4 mr-2 text-blue-500" /> Detalhes de {selectedCategory.name}</h3>
+            <h3 className="font-medium text-gray-800 flex items-center"><Info className="h-4 w-4 mr-2 text-blue-500" /> {t('event_details_of', { category: selectedCategory.name })}</h3>
             {selectedCategory.details_schema.map(field => (
               <div key={field.key} className="space-y-2">
                 <Label htmlFor={`details-${field.key}`}>{field.label}</Label>
@@ -301,7 +303,7 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
 
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="start_date">Data de Início *</Label>
+          <Label htmlFor="start_date">{t('start_date')} {t('required_field')}</Label>
           <Input 
             id="start_date" 
             type="date" 
@@ -311,11 +313,11 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
             className={!formData.start_date ? 'border-red-500' : ''}
           />
           {!formData.start_date && (
-            <p className="text-xs text-red-500">Data de início é obrigatória</p>
+            <p className="text-xs text-red-500">{t('start_date_required')}</p>
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="end_date">Data de Término</Label>
+          <Label htmlFor="end_date">{t('end_date')}</Label>
           <Input 
             id="end_date" 
             type="date" 
@@ -323,16 +325,16 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
             onChange={(e) => handleDateChange('end_date', e.target.value)} 
           />
           {formData.end_date && (
-            <p className="text-xs text-green-500">✓ Data de término definida: {formData.end_date}</p>
+            <p className="text-xs text-green-500">{t('end_date_defined', { date: formData.end_date })}</p>
           )}
           {!formData.end_date && (
-            <p className="text-xs text-gray-500">Opcional - deixe vazio se o evento for em um único dia</p>
+            <p className="text-xs text-gray-500">{t('end_date_optional')}</p>
           )}
         </div>
       </div>
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="start_time">Horário de Início *</Label>
+          <Label htmlFor="start_time">{t('start_time')} {t('required_field')}</Label>
           <Input 
             id="start_time" 
             type="time" 
@@ -342,11 +344,11 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
             className={!formData.start_time ? 'border-red-500' : ''}
           />
           {!formData.start_time && (
-            <p className="text-xs text-red-500">Horário de início é obrigatório</p>
+            <p className="text-xs text-red-500">{t('start_time_required')}</p>
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="end_time">Horário de Término</Label>
+          <Label htmlFor="end_time">{t('end_time')}</Label>
           <Input 
             id="end_time" 
             type="time" 
@@ -354,27 +356,27 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
             onChange={(e) => handleTimeChange('end_time', e.target.value)} 
           />
           {formData.end_time && (
-            <p className="text-xs text-green-500">✓ Horário de término definido: {formData.end_time}</p>
+            <p className="text-xs text-green-500">{t('end_time_defined', { time: formData.end_time })}</p>
           )}
           {!formData.end_time && (
-            <p className="text-xs text-gray-500">Opcional - deixe vazio se não houver horário de término específico</p>
+            <p className="text-xs text-gray-500">{t('end_time_optional')}</p>
           )}
         </div>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="location">Local *</Label>
+        <Label htmlFor="location">{t('event_location')} {t('required_field')}</Label>
         <Input 
           id="location" 
           value={formData.location} 
           onChange={(e) => onInputChange('location', e.target.value)} 
-          placeholder="Ex: São Paulo - SP" 
+          placeholder={t('location_placeholder')} 
           required 
           className={!formData.location ? 'border-red-500' : ''}
         />
       </div>
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="max_participants">Máximo de Participantes *</Label>
+          <Label htmlFor="max_participants">{t('max_participants')} {t('required_field')}</Label>
           <Input 
             id="max_participants" 
             type="number" 
@@ -385,40 +387,40 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="price">Preço (opcional)</Label>
-          <Input id="price" value={formData.price || ''} onChange={(e) => onInputChange('price', e.target.value)} placeholder="Ex: CHF 50.00 ou Gratuito" />
+          <Label htmlFor="price">{t('price_optional')}</Label>
+          <Input id="price" value={formData.price || ''} onChange={(e) => onInputChange('price', e.target.value)} placeholder={t('price_placeholder_event')} />
         </div>
       </div>
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="card_image_url">URL da Imagem do Card</Label>
+          <Label htmlFor="card_image_url">{t('card_image_url')}</Label>
           <div className="relative">
             <Link2 className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
             <Input 
               id="card_image_url" 
               value={formData.card_image_url || ''} 
               onChange={(e) => onInputChange('card_image_url', e.target.value)} 
-              placeholder="https://exemplo.com/imagem-card.jpg"
+              placeholder={t('card_image_placeholder')}
               className="pl-10"
             />
           </div>
-          <p className="text-xs text-gray-500">Recomendado: 400x300 pixels ou 640x360 pixels (proporção 4:3 ou 16:9).</p>
+          <p className="text-xs text-gray-500">{t('card_image_recommendation')}</p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="banner_image_url">URL da Imagem do Banner</Label>
+          <Label htmlFor="banner_image_url">{t('banner_image_url')}</Label>
           <div className="relative">
             <Link2 className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
             <Input 
               id="banner_image_url" 
               value={formData.banner_image_url || ''} 
               onChange={(e) => onInputChange('banner_image_url', e.target.value)} 
-              placeholder="https://exemplo.com/imagem-banner.jpg"
+              placeholder={t('banner_image_placeholder')}
               className="pl-10"
             />
           </div>
-          <p className="text-xs text-gray-500">Recomendado: 1200x400 pixels ou 1500x500 pixels (proporção 3:1 ou 4:1).</p>
+          <p className="text-xs text-gray-500">{t('banner_image_recommendation')}</p>
         </div>
       </div>
       
@@ -427,15 +429,15 @@ const OrganizerEventForm = ({ formData, onInputChange, onSubmit, onCancel, submi
       <div className="space-y-2 pt-4 border-t">
         <Label htmlFor="ad_plan_id" className="flex items-center text-lg font-semibold text-gray-700">
           <Megaphone className="h-5 w-5 mr-2 text-orange-500"/>
-          Impulsionar Evento (Opcional)
+          {t('boost_event_optional')}
         </Label>
-        <p className="text-sm text-gray-500">Selecione um plano de publicidade para dar mais visibilidade ao seu evento. (Opcional)</p>
+        <p className="text-sm text-gray-500">{t('ad_plan_description')}</p>
         <Select value={formData.ad_plan_id || 'none'} onValueChange={(value) => onInputChange('ad_plan_id', value === 'none' ? null : value)}>
           <SelectTrigger>
-            <SelectValue placeholder={'Nenhum plano selecionado'} />
+            <SelectValue placeholder={t('no_plan_selected')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Nenhum</SelectItem>
+            <SelectItem value="none">{t('none')}</SelectItem>
             {adPlans.map(plan => (
               <SelectItem key={plan.id} value={plan.id}>
                 <div className="flex flex-col w-full">
